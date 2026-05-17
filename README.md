@@ -283,7 +283,7 @@ Further development will focus on improving generality, validation, documentatio
 
 This project is released under the **MIT License**.
 
---
+---
 
 ## Acknowledgment of AI-Assisted Development
 
