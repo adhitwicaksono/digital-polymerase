@@ -249,7 +249,25 @@ The XNA World Project aims to explore how alternative nucleic acid chemistries m
 
 Digital Polymerase contributes to this vision by providing computational tools for structure conversion, reconstruction, and scenario modeling.
 
---
+---
+
+## Milestones
+
+### 2026 — Short-oligomer NA → XNA converter prototypes
+
+The first development milestone is to create and validate prototype converters for short nucleic acid oligomers, beginning with RNA input structures.
+
+Initial targets include:
+
+- RNA → HNA conversion using template-guided reconstruction
+- RNA → additional XNA candidates such as FANA, TNA, CeNA, ANA, and GNA
+- Support for short-mer PDB structures, starting from simple 8-mer or similarly small test cases
+- Development of reusable parsing, alignment, backbone-template transfer, and PDB export modules
+- Basic structural sanity checks for candidate converted models
+
+The 2026 goal is not to claim full physical or biological validity, but to establish a working computational foundation for **short-oligomer nucleic acid-to-XNA reconstruction**.
+
+---
 
 ## Current Status
 
@@ -259,7 +277,7 @@ The first prototype has demonstrated that RNA → HNA conversion is more realist
 
 Further development will focus on improving generality, validation, documentation, and modularity.
 
---
+---
 
 ## License
 
@@ -273,13 +291,13 @@ This project uses AI-assisted coding and reasoning workflows during early protot
 
 All generated code and structural outputs should be critically reviewed, tested, and scientifically validated before use in research conclusions.
 
---
+---
 
 ## Author
 Developed by **Adhityo Wicaksono, Arli Aditya Parikesit**
 as part of an ongoing computational exploration of nucleic acid diversity, xenobiology, and the dry-lab side of the **XNA World Project**.
 
---
+---
 
 ## References
 
