@@ -1,0 +1,7 @@
+# Digital Polymerase core dependencies
+# Prototype 001 currently requires NumPy for coordinate handling and Kabsch alignment.
+
+numpy>=1.24
+
+# Development / testing
+pytest>=8.0
