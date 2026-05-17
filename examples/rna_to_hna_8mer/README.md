@@ -33,7 +33,7 @@ Recommended example directory structure:
 ```text
 examples/rna_to_hna_8mer/
 ├── README.md
-├── input_rna_8mer.pdb
-├── hna_8mer_template.pdb
+├── PDB_source.md
 ├── converted_hna_candidate.pdb
-└── conversion_report.md
+├── hna_8mer_template.pdb
+└── input_rna_8mer.pdb
