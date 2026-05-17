@@ -203,7 +203,7 @@ for the full prototype description, method explanation, limitations, and develop
 
 ## Status
 
-**Prototype:** 001  
+**Prototype:** 001  (08/03/2026)
 **Conversion:** RNA → HNA  
 **Method:** Template-guided reconstruction  
 **Input type:** PDB  
