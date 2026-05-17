@@ -73,6 +73,46 @@ This prototype demonstrates the project’s core principle:
 
 ---
 
+## Related Tools and Inspirations
+
+Digital Polymerase is inspired by existing nucleic acid and XNA modeling tools, but it is not intended to duplicate them.
+
+At present, there is no widely established one-click tool that takes an arbitrary DNA/RNA PDB structure and directly converts it into a chemically validated XNA PDB structure. Existing tools instead focus on related tasks such as building XNA duplexes, modeling nucleic acid analogs, analyzing or rebuilding nucleic acid structures, or preparing modified nucleotides for molecular dynamics.
+
+Relevant inspirations include:
+
+### Ducque
+
+**Ducque** is an open-source XNA builder designed for constructing nucleic acid analog duplexes with customizable chemistry. It has been demonstrated in a molecular modeling pipeline for morpholino nucleic acid/RNA duplexes and is especially relevant to XNA-native structure generation [1].
+
+Digital Polymerase is inspired by Ducque’s XNA-native philosophy, especially its focus on customizable nucleic acid analog chemistry.
+
+### proto-Nucleic Acid Builder (pNAB)
+
+**pNAB** is an open-source tool for modeling nucleic acid analogs with alternative backbones and nucleobases. It performs conformational searches to generate candidate structures and was developed to support exploration of XNAs and possible pre-RNA genetic polymers [2].
+
+Digital Polymerase is inspired by pNAB’s general framework for exploring alternative nucleic acid architectures.
+
+### modXNA
+
+**modXNA** is a modular tool for deriving and building modified nucleotides for use with Amber force fields. It is especially relevant for molecular dynamics simulations of noncanonical or modified nucleic acid systems [3].
+
+Digital Polymerase is not currently a force-field parameterization tool, but future workflows may benefit from compatibility with parameterization approaches such as modXNA.
+
+### 3DNA / X3DNA-DSSR
+
+**3DNA** provides tools for the analysis, reconstruction, and visualization of three-dimensional DNA and RNA structures from coordinate files [4]. **DSSR** extends this structural-analysis tradition by dissecting and annotating RNA tertiary structures, including canonical and noncanonical base pairs [5].
+
+Digital Polymerase is inspired by the nucleic-acid structural analysis and rebuilding tradition represented by these tools, while extending the question toward XNA-aware reconstruction.
+
+### NAB / AmberTools
+
+**NAB** is a nucleic acid modeling language originally developed for building unusual nucleic acid structures using rigid-body transformations, distance geometry, and molecular mechanics refinement [6].
+
+Digital Polymerase is inspired by this tradition of programmatic nucleic acid construction, but aims to focus specifically on template-guided NA→XNA reconstruction.
+
+---
+
 ## Planned Features
 
 ### Core features
@@ -189,3 +229,68 @@ digital-polymerase/
 ├── examples/
 ├── docs/
 └── tests/
+```
+
+---
+
+## Relationship to the XNA World Project
+
+Digital Polymerase is envisioned as one component of the broader XNA World Project.
+
+The XNA World Project aims to explore how alternative nucleic acid chemistries may approach life-relevant functional thresholds, including:
+
+- information storage
+- molecular recognition
+- templated copying
+- structural folding
+- catalytic potential
+- evolvability
+- system integration
+
+Digital Polymerase contributes to this vision by providing computational tools for structure conversion, reconstruction, and scenario modeling.
+
+--
+
+## Current Status
+
+This project is in early development.
+
+The first prototype has demonstrated that RNA → HNA conversion is more realistically approached through template-guided reconstruction rather than direct atom insertion or simple geometric editing.
+
+Further development will focus on improving generality, validation, documentation, and modularity.
+
+--
+
+## License
+
+This project is released under the **MIT License**.
+
+--
+
+## Acknowledgment of AI-Assisted Development
+
+This project uses AI-assisted coding and reasoning workflows during early prototyping, including iterative comparison between source and target nucleic acid structures, prototype generation, code review, and documentation drafting.
+
+All generated code and structural outputs should be critically reviewed, tested, and scientifically validated before use in research conclusions.
+
+--
+
+## Author
+Developed by **Adhityo Wicaksono, Arli Aditya Parikesit**
+as part of an ongoing computational exploration of nucleic acid diversity, xenobiology, and the dry-lab side of the **XNA World Project**.
+
+--
+
+## References
+
+[1] Rihon, J., Mattelaer, C.-A., Montalvão, R. W., Froeyen, M., Pinheiro, V. B., & Lescrinier, E. (2024). Structural insights into the morpholino nucleic acid/RNA duplex using the new XNA builder Ducque in a molecular modeling pipeline. *Nucleic Acids Research*, 52(6), 2836–2847. https://doi.org/10.1093/nar/gkae135
+
+[2] Alenaizan, A., Barnett, J. L., Hud, N. V., Sherrill, C. D., & Petrov, A. S. (2021). The proto-Nucleic Acid Builder: a software tool for constructing nucleic acid analogs. *Nucleic Acids Research*, 49(1), 79–89. https://doi.org/10.1093/nar/gkaa1159
+
+[3] Love, O., Galindo-Murillo, R., Roe, D. R., Dans, P. D., Cheatham, T. E. III, & Bergonzo, C. (2024). modXNA: A modular approach to parametrization of modified nucleic acids for use with Amber force fields. *Journal of Chemical Theory and Computation*, 20(21), 9354–9363. https://doi.org/10.1021/acs.jctc.4c01164
+
+[4] Lu, X.-J., & Olson, W. K. (2003). 3DNA: a software package for the analysis, rebuilding and visualization of three-dimensional nucleic acid structures. *Nucleic Acids Research*, 31(17), 5108–5121. https://doi.org/10.1093/nar/gkg680
+
+[5] Lu, X.-J., Bussemaker, H. J., & Olson, W. K. (2015). DSSR: an integrated software tool for dissecting the spatial structure of RNA. *Nucleic Acids Research*, 43(21), e142. https://doi.org/10.1093/nar/gkv716
+
+[6] Macke, T. J., & Case, D. A. (1998). Modeling unusual nucleic acid structures. In N. B. Leontis & J. SantaLucia Jr. (Eds.), *Molecular Modeling of Nucleic Acids* (ACS Symposium Series, Vol. 682, pp. 379–393). American Chemical Society. https://doi.org/10.1021/bk-1998-0682.ch024
