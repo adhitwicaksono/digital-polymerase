@@ -211,28 +211,6 @@ Initial development priorities include:
 
 ---
 
-## Suggested Repository Structure
-
-```text
-digital-polymerase/
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── src/
-│   └── digital_polymerase/
-│       ├── core/
-│       ├── converters/
-│       ├── polymer_db/
-│       └── prototypes/
-├── data/
-│   └── templates/
-├── examples/
-├── docs/
-└── tests/
-```
-
----
-
 ## Relationship to the XNA World Project
 
 Digital Polymerase is envisioned as one component of the broader XNA World Project.
