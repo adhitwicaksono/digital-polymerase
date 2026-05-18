@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/digital_polymerase_banner__V2.png" alt="Digital Polymerase banner" width="100%">
+  <img src="assets/digital_polymerase_banner__v2.png" alt="Digital Polymerase banner" width="100%">
 </p>
 
 # Digital Polymerase
