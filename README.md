@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/digital_polymerase_banner.png" alt="Digital Polymerase banner" width="100%">
+</p>
+
 # Digital Polymerase
 
 **Digital Polymerase** is an early-stage dry-lab software project for exploring computational conversion and reconstruction between canonical nucleic acids (**DNA** and **RNA**) and xeno/synthetic nucleic acids (**XNA**) such as **HNA, ANA, FANA, TNA, GNA, CeNA**, and others.
