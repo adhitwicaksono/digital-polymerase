@@ -1,0 +1,120 @@
+# RNA → TNA Conversion Report
+
+**Project:** Digital Polymerase  
+**Prototype:** 006B  
+**Method:** Linkage-optimized TNA reconstruction  
+**Status:** Experimental candidate, not physically validated  
+**TNA chain-continuity status:** `O2′(i)→P(i+1) PASS`, `P(i)→O3′(i) PASS`  
+**Base-attachment status:** `PASS`  
+**Local TNA sugar status:** `C2′→O2′ PASS`, `C3′→O3′ PASS`
+
+---
+
+## Inputs
+
+- Source RNA PDB: `/mnt/data/RNA-12mer.pdb`
+- TNA template PDB: `/mnt/data/6MU5_TNA_13mer.pdb`
+- Output PDB: `/mnt/data/tna_prototype_006B4_outputs/converted_tna_RNA-12mer_auto_006B4.pdb`
+
+---
+
+## Source and Template
+
+- Source RNA sequence: `CUAGGCUCGAAA`
+- TNA template base-class sequence: `GUACGUGAUCGCA`
+- Source residue count: `12`
+- Template residue count: `13`
+- Converted residues: `12`
+
+---
+
+## Why TNA Needed Prototype 006B.4
+
+Prototype 006A showed the correct conceptual issue: TNA does not use RNA-like O3′→P chain logic.  
+Prototype 006A.1 added direct O2′/O3′ linkage correction, but some residues still could not satisfy both sugar and phosphate distances while keeping the initial sugar fixed.
+
+Prototype 006B.4 therefore locally optimizes each TNA-like sugar scaffold so that:
+
+```text
+P(i)    → O3′(i)
+O2′(i) → P(i+1)
+C2′    → O2′
+C3′    → O3′
+internal threose-like sugar distances
+```
+
+are improved simultaneously.
+
+---
+
+## Alignment / Optimization Summary
+
+- Mean initial segment RMSD: `0.9397 Å`
+- Maximum initial segment RMSD: `1.2477 Å`
+- Mean base-transplant RMSD: `0.0682 Å`
+- Maximum base-transplant RMSD: `0.0922 Å`
+- Mean optimization cost: `0.0067`
+- Mean C1′→glycosidic N distance: `1.4486 Å`
+- Mean P(i)→O3′(i) distance: `1.6041 Å`
+- Mean O2′(i)→P(i+1) distance: `1.5809 Å`
+
+---
+
+## Structural Validation
+
+| Metric | Measured | Missing | Failed | Mean (Å) | Min (Å) | Max (Å) | Expected range (Å) | Status |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| TNA O2'(i)→P(i+1) | 11 | 0 | 0 | 1.581 | 1.333 | 1.620 | 1.25–1.90 | PASS |
+| TNA P(i)→O3'(i) | 12 | 0 | 0 | 1.604 | 1.589 | 1.617 | 1.35–1.90 | PASS |
+| C1'→glycosidic N | 12 | 0 | 0 | 1.449 | 1.415 | 1.473 | 1.30–1.75 | PASS |
+| C1'→C2' | 12 | 0 | 0 | 1.473 | 1.453 | 1.491 | 1.25–1.90 | PASS |
+| C2'→C3' | 12 | 0 | 0 | 1.429 | 1.381 | 1.453 | 1.20–1.90 | PASS |
+| C3'→C4' | 12 | 0 | 0 | 1.531 | 1.496 | 1.577 | 1.25–2.00 | PASS |
+| C2'→O2' | 12 | 0 | 0 | 1.203 | 1.184 | 1.225 | 1.05–1.65 | PASS |
+| C3'→O3' | 12 | 0 | 0 | 1.431 | 1.423 | 1.437 | 1.10–1.75 | PASS |
+| C1'→O4' | 12 | 0 | 0 | 1.491 | 1.462 | 1.540 | 1.20–1.85 | PASS |
+| C4'→O4' | 12 | 0 | 0 | 1.527 | 1.510 | 1.583 | 1.20–1.95 | PASS |
+
+---
+
+## Per-Residue Conversion
+
+| # | Source residue | Base | Output residue | Template used | Initial RMSD (Å) | Base RMSD (Å) | Opt. cost | C1′–N (Å) | P–O3′ (Å) | O2′–next P (Å) | Note |
+|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---|
+| 1 | A72 | C | TC | TC T7 | 0.7883 | 0.0488 | 0.0027 | 1.4220780569293623 | 1.6101841226905356 | 1.6148812466761553 | exact base-class TNA template; linkage-optimized |
+| 2 | A73 | U | TU | TFT T5 | 0.8525 | 0.0674 | 0.0030 | 1.458652117538659 | 1.603649518040659 | 1.6097480080001547 | exact base-class TNA template; linkage-optimized |
+| 3 | A74 | A | FA2 | FA2 T6 | 0.9263 | 0.0835 | 0.0022 | 1.473466999969805 | 1.6167703085361689 | 1.613093004435818 | exact base-class TNA template; linkage-optimized |
+| 4 | A75 | G | TG | TG T4 | 0.8056 | 0.0541 | 0.0043 | 1.4515805179183179 | 1.5992464417048033 | 1.5994588558631155 | exact base-class TNA template; linkage-optimized |
+| 5 | A76 | G | TG | TG T8 | 1.0895 | 0.0392 | 0.0072 | 1.4601102698084218 | 1.592513480488541 | 1.6197582944640097 | exact base-class TNA template; linkage-optimized |
+| 6 | A77 | C | TC | TC T13 | 0.8606 | 0.0762 | 0.0046 | 1.4149621903075735 | 1.5891177324809438 | 1.6009354069908188 | exact base-class TNA template; linkage-optimized |
+| 7 | A78 | U | TU | TFT T9 | 1.2477 | 0.0761 | 0.0024 | 1.4534142561568517 | 1.6069726738510735 | 1.6164494820626976 | exact base-class TNA template; linkage-optimized |
+| 8 | A79 | C | TC | TC T15 | 1.0754 | 0.0922 | 0.0022 | 1.4149943462784533 | 1.602501133612669 | 1.5889655210568743 | exact base-class TNA template; linkage-optimized |
+| 9 | A80 | G | TG | TG T10 | 0.9967 | 0.0664 | 0.0021 | 1.4664422934435655 | 1.60992523809357 | 1.612062050585148 | exact base-class TNA template; linkage-optimized |
+| 10 | A81 | A | FA2 | FA2 T11 | 1.0195 | 0.0658 | 0.0091 | 1.4461666570627199 | 1.6004653414140442 | 1.333496181532115 | exact base-class TNA template; linkage-optimized |
+| 11 | A82 | A | FA2 | FA2 T16 | 0.8708 | 0.0649 | 0.0407 | 1.4475648517423925 | 1.6007180668853493 | 1.5806848803226934 | exact base-class TNA template; linkage-optimized |
+| 12 | A83 | A | FA2 | FA2 T6 | 0.7430 | 0.0841 | 0.0000 | 1.473466999969802 | 1.6167114960924551 | NA | exact base-class TNA template; linkage-optimized |
+
+---
+
+## Scientific Interpretation
+
+This output should be interpreted as:
+
+> a TNA-like computational candidate generated by linkage-optimized reconstruction.
+
+It should **not** be interpreted as:
+
+> a chemically validated, experimentally confirmed, or MD-ready TNA structure.
+
+---
+
+## Important Limitations
+
+- Not energy-minimized.
+- No force-field parameters are generated.
+- No topology files are generated.
+- No explicit `CONECT` records are written.
+- TNA stereochemistry requires expert inspection.
+- The output lacks RNA-like O5′/C5′ sugar-extension atoms because TNA is shorter.
+- Molecular viewers may not render standard nucleic-acid cartoon paths reliably for TNA-like structures.
+- Biological function, stability, replication, or catalytic activity is not implied.
