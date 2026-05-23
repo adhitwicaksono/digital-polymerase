@@ -1,0 +1,154 @@
+# RNA → PNA Conversion Report
+
+**Project:** Digital Polymerase  
+**Prototype:** 008A.1  
+**Method:** PNA chimaera-guided pseudopeptide-backbone reconstruction  
+**Status:** Experimental candidate, not physically validated  
+**PNA chain-continuity status:** `C′(i)→N1′(i+1) PASS`  
+**Base-attachment status:** `PASS`  
+**PNA backbone status:** `C7′→N4′ PASS`, `C′→O1′ PASS`
+
+---
+
+## Inputs
+
+- Source RNA PDB: `/mnt/data/RNA-8mer.pdb`
+- PNA template PDB: `/mnt/data/3mbs_PNA-1mer-8.pdb`
+- Output PDB: `/mnt/data/pna_prototype_008A1_outputs/converted_pna_RNA-8mer_auto_008A1.pdb`
+
+---
+
+## Source and Template
+
+- Source RNA sequence: `CUAGGCUC`
+- PNA template base-class sequence: `GGCAUGCC`
+- Source residue count: `8`
+- Usable template residue count: `8`
+- Converted residues: `8`
+
+---
+
+## Why PNA Is the Chimaera
+
+PNA is not a sugar-modified nucleic acid. It abandons the sugar-phosphate backbone and uses a pseudopeptide backbone.
+
+The uploaded template uses PNA-like residues:
+
+```text
+APN
+TPN
+GPN
+CPN
+```
+
+Important PNA scaffold atoms include:
+
+```text
+C8'
+C7'
+O7'
+N4'
+C3'
+C2'
+N1'
+C5'
+C'
+O1'
+```
+
+Observed linkage:
+
+```text
+C′(i) → N1′(i+1)
+```
+
+Observed base attachment:
+
+```text
+C8′ → glycosidic N
+```
+
+---
+
+## Method Summary
+
+Prototype 008A.1 performs PNA chimaera-guided pseudopeptide-backbone reconstruction:
+
+1. infer source RNA base identity
+2. select a PNA template residue by base class
+3. place the PNA pseudopeptide scaffold using neighboring RNA `C1′` positions as a guide
+4. enforce PNA `C′(i)→N1′(i+1)` continuity using suffix linkage correction
+5. attach the source RNA base to PNA `C8′`
+6. export a PNA-like candidate PDB
+7. validate PNA-specific backbone and base-attachment geometry
+
+---
+
+## Alignment / Correction Summary
+
+- Mean guide RMSD: `1.0347 Å`
+- Maximum guide RMSD: `4.4159 Å`
+- Mean suffix-linkage shift: `8.7575 Å`
+- Maximum suffix-linkage shift: `14.8106 Å`
+- Mean base shift: `5.0789 Å`
+- Maximum base shift: `8.0358 Å`
+- Mean C8′→glycosidic N distance: `1.4668 Å`
+- Mean C′(i)→N1′(i+1) distance: `1.3400 Å`
+
+---
+
+## Structural Validation
+
+| Metric | Measured | Missing | Failed | Mean (Å) | Min (Å) | Max (Å) | Expected range (Å) | Status |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| PNA C'(i)→N1'(i+1) | 7 | 0 | 0 | 1.340 | 1.340 | 1.340 | 1.15–1.60 | PASS |
+| C8'→glycosidic N | 8 | 0 | 0 | 1.467 | 1.444 | 1.482 | 1.25–1.75 | PASS |
+| C8'→C7' | 8 | 0 | 0 | 1.526 | 1.504 | 1.552 | 1.30–1.80 | PASS |
+| C7'→O7' | 8 | 0 | 0 | 1.236 | 1.212 | 1.258 | 1.10–1.40 | PASS |
+| C7'→N4' | 8 | 0 | 0 | 1.338 | 1.329 | 1.346 | 1.15–1.55 | PASS |
+| N4'→C3' | 8 | 0 | 0 | 1.477 | 1.457 | 1.496 | 1.25–1.75 | PASS |
+| C3'→C2' | 8 | 0 | 0 | 1.516 | 1.484 | 1.553 | 1.25–1.85 | PASS |
+| C2'→N1' | 8 | 0 | 0 | 1.480 | 1.457 | 1.499 | 1.20–1.75 | PASS |
+| N4'→C5' | 8 | 0 | 0 | 1.476 | 1.468 | 1.487 | 1.25–1.75 | PASS |
+| C5'→C' | 8 | 0 | 0 | 1.522 | 1.467 | 1.538 | 1.25–1.85 | PASS |
+| C'→O1' | 8 | 0 | 0 | 1.243 | 1.235 | 1.254 | 1.10–1.40 | PASS |
+
+---
+
+## Per-Residue Conversion
+
+| # | Source residue | Base | Output residue | Template used | Guide RMSD (Å) | Suffix shift (Å) | Base shift (Å) | C8′–N (Å) | C′–next N1′ (Å) | Note |
+|---:|---|---|---|---|---:|---:|---:|---:|---:|---|
+| 1 | A72 | C | CPN | CPN A1003 | 0.6309 | 0.0000 | 0.3320 | 1.4719079454911503 | 1.339999999999989 | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+| 2 | A73 | U | UPN | TPN A1005 | 0.4219 | 2.9091 | 2.9091 | 1.4818512071055023 | 1.3399999999999952 | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+| 3 | A74 | A | APN | APN A1004 | 0.3941 | 5.2175 | 1.8938 | 1.4510375598171197 | 1.3399999999999828 | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+| 4 | A75 | G | GPN | GPN A1001 | 4.4159 | 10.8123 | 6.9164 | 1.4693753774988918 | 1.3399999999999976 | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+| 5 | A76 | G | GPN | GPN A1002 | 0.6006 | 11.2643 | 7.8358 | 1.4440252767870727 | 1.339999999999991 | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+| 6 | A77 | C | CPN | CPN A1007 | 0.5440 | 11.4157 | 8.0358 | 1.4654695493254102 | 1.3399999999999952 | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+| 7 | A78 | U | UPN | TPN A1005 | 0.6792 | 13.6307 | 6.2389 | 1.481851207105499 | 1.340000000000009 | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+| 8 | A79 | C | CPN | CPN A1008 | 0.5911 | 14.8106 | 6.4694 | 1.4691477121106782 | NA | exact base-class PNA template; PNA chimaera-guided scaffold with suffix linkage correction |
+
+---
+
+## Scientific Interpretation
+
+This output should be interpreted as:
+
+> a PNA-like computational candidate generated by chimaera-guided pseudopeptide-backbone reconstruction.
+
+It should **not** be interpreted as:
+
+> a chemically validated, experimentally confirmed, or MD-ready PNA structure.
+
+---
+
+## Important Limitations
+
+- Not energy-minimized.
+- No force-field parameters are generated.
+- No topology files are generated.
+- No explicit `CONECT` records are written.
+- PNA stereochemistry and peptide-like backbone geometry require expert inspection.
+- The suffix-linkage correction prioritizes PNA chain continuity and may increase base shifts.
+- Molecular viewers may not render standard nucleic-acid cartoon paths for PNA.
+- The output is a candidate geometry only; biological function, stability, binding, or catalytic activity is not implied.
