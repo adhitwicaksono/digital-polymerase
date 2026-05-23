@@ -1,46 +1,51 @@
 #!/usr/bin/env python3
 """
-Prototype 002A: Fragment-Guided RNA to ANA Converter
+Prototype 002A.1: Fragment-Guided RNA to ANA Converter with Chain-Continuity Validation
 
 Digital Polymerase / XNA World Project
 
 This script generates an ANA-like candidate PDB from an RNA PDB using a shorter
 ANA fragment as a local geometry template.
 
+Patch 002A.1 adds explicit validation of polymer-chain continuity, especially:
+- O3'(i) -> P(i+1)
+- P(i) -> O5'(i)
+
 Important:
 - This is NOT a chemically or physically validated ANA modeling package.
 - This is an experimental fragment-guided candidate-structure generator.
 - The output requires visual inspection, geometry checks, energy minimization,
   and expert chemical review before scientific interpretation.
+- This patch reports chain-continuity problems; it does not yet fix them.
 
 Strategy:
 1. Parse source RNA PDB.
 2. Parse ANA fragment/template PDB.
 3. For each RNA residue, select an ANA local template residue:
-   - G -> observed G-like ANA template (e.g., GAO)
-   - U -> observed U-like ANA template (e.g., UAR)
-   - C -> observed C-like ANA template (e.g., CAR)
-   - A -> purine fallback, usually G-like ANA template, because this 4-mer
-          template may not contain an A-like ANA residue.
+   - G -> observed G-like ANA template, e.g. GAO
+   - U -> observed U-like ANA template, e.g. UAR
+   - C -> observed C-like ANA template, e.g. CAR
+   - A -> purine fallback, usually G-like ANA template, because the current
+          ANA fragment may not contain an A-like residue.
 4. Rigidly align the ANA template residue frame onto the RNA residue frame using
    local anchor atoms and Kabsch alignment.
 5. Use the transformed ANA backbone and preserve the RNA nucleobase atoms.
 6. Export a candidate ANA-like PDB.
+7. Validate local alignment and inter-residue chain continuity.
 
 Recommended interpretation:
     RNA global/base geometry + ANA local backbone fragment geometry
-    = exploratory ANA-like candidate structure
+    = exploratory ANA-like candidate structure, not a validated polymer.
 """
 
 from __future__ import annotations
 
 import argparse
-import math
 import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple, Optional
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -48,24 +53,18 @@ import numpy as np
 ResidueKey = Tuple[str, int, str]
 
 
-# Standard / common nucleic acid backbone atoms.
-# Prime-containing hydrogens are classified as backbone/sugar hydrogens separately.
 BACKBONE_ATOMS = {
     "P", "OP1", "OP2", "O5'", "C5'", "C4'", "O4'",
     "C3'", "O3'", "C2'", "O2'", "C1'",
 }
 
+# Preferred output order for common sugar/phosphate atoms.
 BACKBONE_ORDER = [
     "P", "OP1", "OP2", "O5'", "C5'", "C4'", "O4'",
     "C3'", "O3'", "C2'", "O2'", "C1'",
-    "H5'", "'H5'", "H4'", "H3'", "H2'", "'HO2", "H1'", "'HO3",
 ]
 
-
-# Default alignment anchors. These exist in the RNA and the uploaded ANA fragment.
 DEFAULT_ANCHORS = ["C1'", "C2'", "C3'", "C4'", "O4'"]
-
-
 RNA_BASES = {"A", "U", "G", "C"}
 
 
@@ -99,20 +98,50 @@ class ConversionRecord:
     note: str
 
 
+@dataclass
+class DistanceRecord:
+    label: str
+    chain: str
+    left_res_num: int
+    left_icode: str
+    left_atom: str
+    right_res_num: int
+    right_icode: str
+    right_atom: str
+    distance: float
+    expected_min: float
+    expected_max: float
+    status: str
+    note: str = ""
+
+
+@dataclass
+class DistanceSummary:
+    label: str
+    expected_min: float
+    expected_max: float
+    measured: int
+    missing: int
+    failed: int
+    mean: float
+    minimum: float
+    maximum: float
+    records: List[DistanceRecord]
+
+
 def infer_element(atom_name: str, pdb_element: str = "") -> str:
     """Infer chemical element from PDB element column or atom name."""
     elem = (pdb_element or "").strip()
     if elem and re.match(r"^[A-Za-z]{1,2}$", elem):
-        # Handle odd cases like O1- by falling back below.
-        if elem.upper() not in {"O1", "O1-", "C1", "N1"}:
-            return elem.upper() if len(elem) == 1 else elem.title()
+        elem = elem.upper()
+        if elem in {"C", "N", "O", "P", "H", "S", "F", "CL", "BR", "I"}:
+            return elem[0] + elem[1:].lower()
 
     cleaned = re.sub(r"[^A-Za-z]", "", atom_name)
     if not cleaned:
         return ""
-    # PDB atom names for nucleic acids are normally C/N/O/P/H.
     first = cleaned[0].upper()
-    if first in {"C", "N", "O", "P", "H", "S"}:
+    if first in {"C", "N", "O", "P", "H", "S", "F"}:
         return first
     return first
 
@@ -132,6 +161,7 @@ def parse_pdb(path: Path) -> Dict[ResidueKey, Dict[str, Atom]]:
             chain = line[21].strip() if len(line) > 21 and line[21].strip() else "A"
             res_num = int(line[22:26].strip())
             insertion_code = line[26].strip() if len(line) > 26 else ""
+
             x = float(line[30:38].strip())
             y = float(line[38:46].strip())
             z = float(line[46:54].strip())
@@ -180,8 +210,7 @@ def normalize_base_from_residue_name(res_name: str) -> str:
     if res in RNA_BASES:
         return res
 
-    # Common XNA/nonstandard residue naming in the current templates:
-    # GAO = G-like ANA residue, UAR = U-like ANA residue, CAR = C-like ANA residue.
+    # Current ANA fragment examples: GAO, UAR, CAR.
     if res.startswith("G"):
         return "G"
     if res.startswith("A"):
@@ -199,8 +228,7 @@ def is_backbone_atom(atom_name: str) -> bool:
     if atom_name in BACKBONE_ATOMS:
         return True
 
-    # Prime-containing hydrogens or hydroxyl labels from BIOVIA-style PDB output.
-    # Examples observed: H1', H2', H3', H4', H5', 'H5', 'HO2, 'HO3.
+    # Prime-containing atoms/hydrogens usually belong to sugar/backbone.
     if "'" in atom_name:
         return True
 
@@ -253,13 +281,11 @@ def kabsch(mobile: np.ndarray, target: np.ndarray) -> Tuple[np.ndarray, np.ndarr
     return r, t, rmsd
 
 
-def transform_atom(atom: Atom, r: np.ndarray, t: np.ndarray) -> Atom:
-    new_atom = Atom(**atom.__dict__)
-    new_atom.coords = r @ atom.coords + t
-    return new_atom
+def apply_transform(coords: np.ndarray, r: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return r @ coords + t
 
 
-def clone_atom_with_updates(
+def clone_atom(
     atom: Atom,
     *,
     coords: Optional[np.ndarray] = None,
@@ -267,22 +293,20 @@ def clone_atom_with_updates(
     chain: Optional[str] = None,
     res_num: Optional[int] = None,
     insertion_code: Optional[str] = None,
-    record: Optional[str] = "HETATM",
+    record: str = "HETATM",
 ) -> Atom:
-    new_atom = Atom(**atom.__dict__)
-    if coords is not None:
-        new_atom.coords = coords
-    if res_name is not None:
-        new_atom.res_name = res_name
-    if chain is not None:
-        new_atom.chain = chain
-    if res_num is not None:
-        new_atom.res_num = res_num
-    if insertion_code is not None:
-        new_atom.insertion_code = insertion_code
-    if record is not None:
-        new_atom.record = record
-    return new_atom
+    return Atom(
+        record=record if record is not None else atom.record,
+        atom_name=atom.atom_name,
+        res_name=res_name if res_name is not None else atom.res_name,
+        chain=chain if chain is not None else atom.chain,
+        res_num=res_num if res_num is not None else atom.res_num,
+        insertion_code=insertion_code if insertion_code is not None else atom.insertion_code,
+        coords=np.array(coords if coords is not None else atom.coords, dtype=float),
+        occupancy=atom.occupancy,
+        temp_factor=atom.temp_factor,
+        element=atom.element,
+    )
 
 
 def build_template_index(
@@ -332,13 +356,12 @@ def select_template_for_base(
         key, res = template_index["U"]
         return key, res, "U", "pyrimidine fallback: C uses U-like ANA backbone template"
 
-    # Last-resort fallback: first available template.
     first_base = sorted(template_index.keys())[0]
     key, res = template_index[first_base]
     return key, res, first_base, f"last-resort fallback: uses {first_base}-like ANA template"
 
 
-def target_ana_residue_name(source_base: str, naming_policy: str = "provisional") -> str:
+def target_ana_residue_name(source_base: str, naming_policy: str = "template-observed") -> str:
     """
     Assign output residue names for ANA candidate residues.
 
@@ -348,11 +371,12 @@ def target_ana_residue_name(source_base: str, naming_policy: str = "provisional"
     source_base = source_base.upper()
 
     if naming_policy == "template-observed":
-        # Use observed where known, provisional where absent.
         return {"A": "AAR", "U": "UAR", "G": "GAO", "C": "CAR"}.get(source_base, "ANA")
 
-    # Provisional uniform-ish style.
-    return {"A": "AAR", "U": "UAR", "G": "GAR", "C": "CAR"}.get(source_base, "ANA")
+    if naming_policy == "provisional":
+        return {"A": "AAR", "U": "UAR", "G": "GAR", "C": "CAR"}.get(source_base, "ANA")
+
+    raise ValueError(f"Unsupported naming policy: {naming_policy}")
 
 
 def available_anchors(source: Dict[str, Atom], template: Dict[str, Atom], requested: Iterable[str]) -> List[str]:
@@ -372,81 +396,92 @@ def convert_residue_fragment_guided(
     """
     Convert one RNA residue into an ANA-like candidate residue.
 
-    The template ANA backbone is transformed into the source RNA local frame.
-    RNA nucleobase atoms are preserved in their original source coordinates.
+    This transforms the ANA template backbone into the RNA residue local frame.
+    RNA base atoms are preserved in their source coordinates.
     """
+    source_chain, source_res_num, source_icode = source_key
+
     used_anchors = available_anchors(source_residue, template_residue, anchors)
     if len(used_anchors) < 3:
         raise ValueError(
-            f"Need at least 3 shared anchor atoms, found {len(used_anchors)}: {used_anchors}"
+            f"Not enough shared anchor atoms for {source_key}. "
+            f"Need at least 3, found {used_anchors}."
         )
 
-    mobile = np.array([template_residue[a].coords for a in used_anchors], dtype=float)
-    target = np.array([source_residue[a].coords for a in used_anchors], dtype=float)
+    mobile = np.array([template_residue[a].coords for a in used_anchors])
+    target = np.array([source_residue[a].coords for a in used_anchors])
+    r, t, _initial_rmsd = kabsch(mobile, target)
 
-    r, t, rmsd = kabsch(mobile, target)
+    transformed_template: Dict[str, Atom] = {}
+    for atom_name, atom in template_residue.items():
+        coords = apply_transform(atom.coords, r, t)
+        transformed_template[atom_name] = clone_atom(
+            atom,
+            coords=coords,
+            res_name=target_res_name,
+            chain=source_chain,
+            res_num=source_res_num,
+            insertion_code=source_icode,
+            record="HETATM",
+        )
 
-    source_backbone, source_base = split_backbone_base(source_residue)
-    template_backbone, _template_base = split_backbone_base(template_residue)
+    # Optional C1' pin: translate the transformed template so C1' exactly matches source C1'.
+    if fix_c1 and "C1'" in transformed_template and "C1'" in source_residue:
+        delta = source_residue["C1'"].coords - transformed_template["C1'"].coords
+        for atom in transformed_template.values():
+            atom.coords = atom.coords + delta
 
-    # Transform ANA template backbone into source local/global frame.
-    transformed_backbone: Dict[str, Atom] = {}
-    for atom_name, atom in template_backbone.items():
-        transformed = transform_atom(atom, r, t)
-        transformed_backbone[atom_name] = transformed
+    # RMSD after optional C1' pin.
+    transformed_anchor = np.array([transformed_template[a].coords for a in used_anchors])
+    final_rmsd = float(np.sqrt(np.mean(np.sum((transformed_anchor - target) ** 2, axis=1))))
 
-    # Optional translation to pin template C1' exactly to the source C1'
-    # for better base-backbone attachment consistency.
-    if fix_c1 and "C1'" in transformed_backbone and "C1'" in source_residue:
-        delta = source_residue["C1'"].coords - transformed_backbone["C1'"].coords
-        for atom_name in transformed_backbone:
-            transformed_backbone[atom_name].coords = transformed_backbone[atom_name].coords + delta
+    template_backbone, _template_base = split_backbone_base(transformed_template)
+    _source_backbone, source_base_atoms = split_backbone_base(source_residue)
 
-    chain, res_num, icode = source_key
     output: Dict[str, Atom] = {}
 
-    for atom_name, atom in transformed_backbone.items():
-        output[atom_name] = clone_atom_with_updates(
+    # Use transformed ANA backbone/scaffold atoms.
+    for atom_name, atom in template_backbone.items():
+        output[atom_name] = atom
+
+    # Preserve RNA base atoms in original coordinates, with target ANA residue name.
+    for atom_name, atom in source_base_atoms.items():
+        output[atom_name] = clone_atom(
             atom,
             res_name=target_res_name,
-            chain=chain,
-            res_num=res_num,
-            insertion_code=icode,
+            chain=source_chain,
+            res_num=source_res_num,
+            insertion_code=source_icode,
             record="HETATM",
         )
 
-    # Preserve RNA base atoms in the original source position.
-    for atom_name, atom in source_base.items():
-        output[atom_name] = clone_atom_with_updates(
-            atom,
-            res_name=target_res_name,
-            chain=chain,
-            res_num=res_num,
-            insertion_code=icode,
-            record="HETATM",
-        )
-
-    return output, rmsd, used_anchors
+    return output, final_rmsd, used_anchors
 
 
-def atom_sort_key(atom_name: str) -> Tuple[int, int, str]:
+def residue_sequence(residues: Dict[ResidueKey, Dict[str, Atom]]) -> str:
+    seq = ""
+    for key in sorted_residue_keys(residues):
+        seq += normalize_base_from_residue_name(residue_name(residues[key]))
+    return seq
+
+
+def atom_sort_key(atom_name: str) -> Tuple[int, str]:
     if atom_name in BACKBONE_ORDER:
-        return (0, BACKBONE_ORDER.index(atom_name), atom_name)
-    if is_backbone_atom(atom_name):
-        return (1, 999, atom_name)
-    return (2, 999, atom_name)
+        return (BACKBONE_ORDER.index(atom_name), atom_name)
+    return (100, atom_name)
 
 
 def format_pdb_atom_line(serial: int, atom: Atom) -> str:
-    record = "HETATM"
-    atom_name = atom.atom_name
+    record = atom.record or "HETATM"
+    atom_name = atom.atom_name[:4]
     res_name = atom.res_name[:3]
     chain = (atom.chain or "A")[:1]
-    icode = atom.insertion_code[:1] if atom.insertion_code else " "
+    icode = (atom.insertion_code or " ")[:1]
     elem = (atom.element or infer_element(atom_name))[:2].rjust(2)
 
     return (
-        f"{record:<6}{serial:5d} "
+        f"{record:<6s}"
+        f"{serial:5d} "
         f"{atom_name:>4s} "
         f"{res_name:>3s} "
         f"{chain:1s}"
@@ -468,17 +503,18 @@ def write_pdb(
     *,
     source_sequence: str,
     template_summary: str,
-    records: List[ConversionRecord],
 ) -> None:
     with output_path.open("w", encoding="utf-8") as f:
-        f.write("REMARK   Digital Polymerase Prototype 002A\n")
+        f.write("REMARK   Digital Polymerase Prototype 002A.1\n")
         f.write("REMARK   Fragment-guided RNA to ANA candidate reconstruction\n")
         f.write(f"REMARK   Source RNA sequence: {source_sequence}\n")
         f.write(f"REMARK   ANA template summary: {template_summary}\n")
         f.write("REMARK   Method: ANA fragment backbone transformed into RNA local frames\n")
         f.write("REMARK   RNA nucleobase atoms preserved; ANA backbone atoms are template-derived\n")
+        f.write("REMARK   PATCH 002A.1: Report-level chain-continuity validation added\n")
         f.write("REMARK   WARNING: Computational candidate only\n")
         f.write("REMARK   WARNING: Not energy-minimized, force-field-validated, or experimentally verified\n")
+        f.write("REMARK   WARNING: Chain continuity is validated in the report but not corrected by this script\n")
         f.write("REMARK   WARNING: ANA residue names are provisional and may need adjustment\n")
         f.write("CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1\n")
 
@@ -490,6 +526,239 @@ def write_pdb(
                 serial += 1
 
         f.write("END\n")
+
+
+def _summarize_distances(
+    label: str,
+    records: List[DistanceRecord],
+    missing: int,
+    expected_min: float,
+    expected_max: float,
+) -> DistanceSummary:
+    distances = [r.distance for r in records]
+    failed = sum(1 for r in records if r.status == "FAIL")
+    if distances:
+        mean = float(np.mean(distances))
+        minimum = float(np.min(distances))
+        maximum = float(np.max(distances))
+    else:
+        mean = minimum = maximum = float("nan")
+    return DistanceSummary(
+        label=label,
+        expected_min=expected_min,
+        expected_max=expected_max,
+        measured=len(records),
+        missing=missing,
+        failed=failed,
+        mean=mean,
+        minimum=minimum,
+        maximum=maximum,
+        records=records,
+    )
+
+
+def validate_intra_residue_distance(
+    residues: Dict[ResidueKey, Dict[str, Atom]],
+    *,
+    atom_a: str,
+    atom_b: str,
+    expected_min: float,
+    expected_max: float,
+    label: str,
+) -> DistanceSummary:
+    records: List[DistanceRecord] = []
+    missing = 0
+
+    for key in sorted_residue_keys(residues):
+        chain, res_num, icode = key
+        residue = residues[key]
+        if atom_a not in residue or atom_b not in residue:
+            missing += 1
+            continue
+        dist = float(np.linalg.norm(residue[atom_a].coords - residue[atom_b].coords))
+        status = "PASS" if expected_min <= dist <= expected_max else "FAIL"
+        records.append(
+            DistanceRecord(
+                label=label,
+                chain=chain,
+                left_res_num=res_num,
+                left_icode=icode,
+                left_atom=atom_a,
+                right_res_num=res_num,
+                right_icode=icode,
+                right_atom=atom_b,
+                distance=dist,
+                expected_min=expected_min,
+                expected_max=expected_max,
+                status=status,
+            )
+        )
+
+    return _summarize_distances(label, records, missing, expected_min, expected_max)
+
+
+def validate_inter_residue_distance(
+    residues: Dict[ResidueKey, Dict[str, Atom]],
+    *,
+    atom_left: str,
+    atom_right: str,
+    expected_min: float,
+    expected_max: float,
+    label: str,
+    skip_numbering_gaps: bool = True,
+) -> DistanceSummary:
+    records: List[DistanceRecord] = []
+    missing = 0
+
+    keys = sorted_residue_keys(residues)
+    for left_key, right_key in zip(keys[:-1], keys[1:]):
+        l_chain, l_num, l_icode = left_key
+        r_chain, r_num, r_icode = right_key
+
+        if l_chain != r_chain:
+            continue
+
+        if skip_numbering_gaps and (r_num != l_num + 1 or l_icode or r_icode):
+            continue
+
+        left_res = residues[left_key]
+        right_res = residues[right_key]
+
+        if atom_left not in left_res or atom_right not in right_res:
+            missing += 1
+            continue
+
+        dist = float(np.linalg.norm(left_res[atom_left].coords - right_res[atom_right].coords))
+        status = "PASS" if expected_min <= dist <= expected_max else "FAIL"
+        note = ""
+        if r_num != l_num + 1:
+            note = "non-consecutive residue numbering"
+
+        records.append(
+            DistanceRecord(
+                label=label,
+                chain=l_chain,
+                left_res_num=l_num,
+                left_icode=l_icode,
+                left_atom=atom_left,
+                right_res_num=r_num,
+                right_icode=r_icode,
+                right_atom=atom_right,
+                distance=dist,
+                expected_min=expected_min,
+                expected_max=expected_max,
+                status=status,
+                note=note,
+            )
+        )
+
+    return _summarize_distances(label, records, missing, expected_min, expected_max)
+
+
+def validation_status(summary: DistanceSummary) -> str:
+    if summary.measured == 0:
+        return "NO_DATA"
+    return "PASS" if summary.failed == 0 else "FAIL"
+
+
+def worst_records(summary: DistanceSummary, n: int = 20) -> List[DistanceRecord]:
+    def deviation(r: DistanceRecord) -> float:
+        if r.distance < summary.expected_min:
+            return summary.expected_min - r.distance
+        if r.distance > summary.expected_max:
+            return r.distance - summary.expected_max
+        return 0.0
+    return sorted(summary.records, key=deviation, reverse=True)[:n]
+
+
+def distance_summary_table(source_summaries: Dict[str, DistanceSummary],
+                           output_summaries: Dict[str, DistanceSummary]) -> str:
+    labels = sorted(set(source_summaries) | set(output_summaries))
+    lines = [
+        "| Metric | Structure | Measured | Missing | Failed | Mean (Å) | Min (Å) | Max (Å) | Expected range (Å) | Status |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---|---|",
+    ]
+    for label in labels:
+        for structure_name, summary_dict in [("source", source_summaries), ("output", output_summaries)]:
+            summary = summary_dict.get(label)
+            if summary is None:
+                continue
+            lines.append(
+                f"| {label} | {structure_name} | {summary.measured} | {summary.missing} | {summary.failed} | "
+                f"{summary.mean:.3f} | {summary.minimum:.3f} | {summary.maximum:.3f} | "
+                f"{summary.expected_min:.2f}–{summary.expected_max:.2f} | {validation_status(summary)} |"
+            )
+    return "\n".join(lines)
+
+
+def failed_link_table(summary: DistanceSummary, n: int = 20) -> str:
+    failed = [r for r in worst_records(summary, n=n) if r.status == "FAIL"]
+    if not failed:
+        return "No failed links detected."
+
+    lines = [
+        "| Rank | Link | Distance (Å) | Expected range (Å) | Status | Note |",
+        "|---:|---|---:|---|---|---|",
+    ]
+    for i, r in enumerate(failed, start=1):
+        link = f"{r.chain}{r.left_res_num}{r.left_icode}:{r.left_atom} → {r.chain}{r.right_res_num}{r.right_icode}:{r.right_atom}"
+        lines.append(
+            f"| {i} | `{link}` | {r.distance:.3f} | {r.expected_min:.2f}–{r.expected_max:.2f} | {r.status} | {r.note} |"
+        )
+    return "\n".join(lines)
+
+
+def build_validation_summaries(
+    source: Dict[ResidueKey, Dict[str, Atom]],
+    output: Dict[ResidueKey, Dict[str, Atom]],
+    *,
+    op_min: float,
+    op_max: float,
+    po5_min: float,
+    po5_max: float,
+    skip_numbering_gaps: bool = True,
+) -> Tuple[Dict[str, DistanceSummary], Dict[str, DistanceSummary]]:
+    source_summaries = {
+        "O3'(i)→P(i+1)": validate_inter_residue_distance(
+            source,
+            atom_left="O3'",
+            atom_right="P",
+            expected_min=op_min,
+            expected_max=op_max,
+            label="O3'(i)→P(i+1)",
+            skip_numbering_gaps=skip_numbering_gaps,
+        ),
+        "P(i)→O5'(i)": validate_intra_residue_distance(
+            source,
+            atom_a="P",
+            atom_b="O5'",
+            expected_min=po5_min,
+            expected_max=po5_max,
+            label="P(i)→O5'(i)",
+        ),
+    }
+
+    output_summaries = {
+        "O3'(i)→P(i+1)": validate_inter_residue_distance(
+            output,
+            atom_left="O3'",
+            atom_right="P",
+            expected_min=op_min,
+            expected_max=op_max,
+            label="O3'(i)→P(i+1)",
+            skip_numbering_gaps=skip_numbering_gaps,
+        ),
+        "P(i)→O5'(i)": validate_intra_residue_distance(
+            output,
+            atom_a="P",
+            atom_b="O5'",
+            expected_min=po5_min,
+            expected_max=po5_max,
+            label="P(i)→O5'(i)",
+        ),
+    }
+
+    return source_summaries, output_summaries
 
 
 def write_report(
@@ -504,6 +773,9 @@ def write_report(
     anchors: List[str],
     fix_c1: bool,
     naming_policy: str,
+    source_validation: Dict[str, DistanceSummary],
+    output_validation: Dict[str, DistanceSummary],
+    skip_numbering_gaps: bool,
 ) -> None:
     rmsds = [r.anchor_rmsd for r in records]
     mean_rmsd = sum(rmsds) / len(rmsds) if rmsds else float("nan")
@@ -512,7 +784,7 @@ def write_report(
     template_lines = []
     for base_class, (key, residue) in sorted(template_index.items()):
         template_lines.append(
-            f"- `{base_class}` → `{residue_name(residue)}` at chain `{key[0]}`, residue `{key[1]}`"
+            f"- `{base_class}` → `{residue_name(residue)}` at chain `{key[0]}`, residue `{key[1]}{key[2]}`"
         )
 
     record_lines = []
@@ -534,12 +806,18 @@ def write_report(
             )
         )
 
+    output_o3p = output_validation.get("O3'(i)→P(i+1)")
+    chain_status_text = "UNKNOWN"
+    if output_o3p is not None:
+        chain_status_text = validation_status(output_o3p)
+
     report = f"""# RNA → ANA Fragment-Guided Conversion Report
 
 **Project:** Digital Polymerase  
-**Prototype:** 002A  
-**Method:** Fragment-guided RNA → ANA candidate reconstruction  
-**Status:** Experimental candidate, not physically validated
+**Prototype:** 002A.1  
+**Method:** Fragment-guided RNA → ANA candidate reconstruction with chain-continuity validation  
+**Status:** Experimental candidate, not physically validated  
+**Chain-continuity status:** `{chain_status_text}`
 
 ---
 
@@ -580,8 +858,11 @@ For each RNA residue:
 5. preserve RNA nucleobase atoms in their original coordinates
 6. combine transformed ANA backbone + preserved RNA base atoms
 7. export an ANA-like candidate residue
+8. validate inter-residue chain continuity in the generated output
 
 This is **not** a full-template reconstruction because the ANA template contains only 4 residues.
+
+Patch 002A.1 adds chain-continuity validation, but it does **not** yet fix broken chain geometry.
 
 ---
 
@@ -590,6 +871,7 @@ This is **not** a full-template reconstruction because the ANA template contains
 - Anchor atoms: `{", ".join(anchors)}`
 - Pin C1' after alignment: `{fix_c1}`
 - Residue naming policy: `{naming_policy}`
+- Skip residue-numbering gaps in inter-residue validation: `{skip_numbering_gaps}`
 
 ---
 
@@ -598,6 +880,22 @@ This is **not** a full-template reconstruction because the ANA template contains
 - Converted residues: `{len(records)}`
 - Mean anchor RMSD: `{mean_rmsd:.4f} Å`
 - Maximum anchor RMSD: `{max_rmsd:.4f} Å`
+
+Important:
+
+> Anchor RMSD measures local residue-frame alignment only. It does not prove polymer-chain continuity.
+
+---
+
+## Chain-Continuity Validation
+
+The patch evaluates whether the generated output preserves basic covalent-distance plausibility.
+
+{distance_summary_table(source_validation, output_validation)}
+
+### Worst output O3′–P links
+
+{failed_link_table(output_validation["O3'(i)→P(i+1)"], n=20)}
 
 ---
 
@@ -619,6 +917,8 @@ It should **not** be interpreted as:
 
 > a chemically validated or experimentally confirmed ANA structure.
 
+If chain-continuity status is `FAIL`, the structure should also **not** be interpreted as a continuous ANA polymer.
+
 ---
 
 ## Important Limitations
@@ -626,6 +926,7 @@ It should **not** be interpreted as:
 - The ANA template contains only a 4-mer fragment.
 - A-like ANA geometry is absent in the uploaded template; A residues may use a purine fallback template.
 - RNA nucleobase atoms are preserved, but backbone geometry is template-derived.
+- Patch 002A.1 reports chain-continuity problems but does not correct them.
 - The output is not energy-minimized.
 - No force-field parameters are generated.
 - Connectivity is not explicitly written with `CONECT` records.
@@ -641,23 +942,29 @@ It should **not** be interpreted as:
 2. Check residue completeness and atom naming.
 3. Inspect base-backbone attachment geometry.
 4. Check bond lengths, angles, torsions, and clashes.
-5. Compare local ANA backbone geometry with the original 4-mer ANA template.
-6. Add explicit connectivity records or topology files in future versions.
-7. Perform energy minimization with appropriate force-field support.
-8. Repeat the prototype when a full ANA 8-mer template becomes available.
+5. Review the O3′–P chain-continuity table.
+6. Compare local ANA backbone geometry with the original 4-mer ANA template.
+7. Add explicit connectivity records or topology files in future versions.
+8. Implement fragment-chain reconstruction or chain-aware coordinate correction.
+9. Perform energy minimization with appropriate force-field support.
 
 ---
 
 ## Development Note
 
-This prototype introduces a second Digital Polymerase mode:
+This patch marks a transition from:
 
 ```text
-Prototype 001: full-template reconstruction
-Prototype 002A: fragment-guided local reconstruction
+low local RMSD = looks promising
 ```
 
-This is useful because many XNA systems may not have full-length templates matching the desired source molecule.
+to:
+
+```text
+low local RMSD + chain-continuity validation = more honest structural assessment
+```
+
+The next Digital Polymerase requirement is chain-aware reconstruction.
 """
     report_path.write_text(report, encoding="utf-8")
 
@@ -671,6 +978,11 @@ def convert(
     anchors: List[str] = DEFAULT_ANCHORS,
     fix_c1: bool = True,
     naming_policy: str = "template-observed",
+    op_min: float = 1.4,
+    op_max: float = 1.8,
+    po5_min: float = 1.4,
+    po5_max: float = 1.8,
+    skip_numbering_gaps: bool = True,
 ) -> List[ConversionRecord]:
     source = parse_pdb(source_rna_path)
     template = parse_pdb(ana_template_path)
@@ -686,15 +998,12 @@ def convert(
 
     output_residues: Dict[ResidueKey, Dict[str, Atom]] = {}
     records: List[ConversionRecord] = []
+    source_sequence = residue_sequence(source)
 
-    source_keys = sorted_residue_keys(source)
-    source_sequence = ""
-
-    for source_key in source_keys:
+    for source_key in sorted_residue_keys(source):
         source_residue = source[source_key]
         source_res_name = residue_name(source_residue)
         source_base = normalize_base_from_residue_name(source_res_name)
-        source_sequence += source_base
 
         template_key, template_residue, template_base_class, note = select_template_for_base(
             source_base, template_index
@@ -742,7 +1051,16 @@ def convert(
         output_path,
         source_sequence=source_sequence,
         template_summary=template_summary,
-        records=records,
+    )
+
+    source_validation, output_validation = build_validation_summaries(
+        source,
+        output_residues,
+        op_min=op_min,
+        op_max=op_max,
+        po5_min=po5_min,
+        po5_max=po5_max,
+        skip_numbering_gaps=skip_numbering_gaps,
     )
 
     if report_path:
@@ -757,44 +1075,96 @@ def convert(
             anchors=anchors,
             fix_c1=fix_c1,
             naming_policy=naming_policy,
+            source_validation=source_validation,
+            output_validation=output_validation,
+            skip_numbering_gaps=skip_numbering_gaps,
         )
+
+    output_o3p = output_validation["O3'(i)→P(i+1)"]
+    print("=" * 80)
+    print("Digital Polymerase Prototype 002A.1")
+    print("Fragment-guided RNA → ANA candidate reconstruction")
+    print("=" * 80)
+    print(f"Source RNA: {source_rna_path}")
+    print(f"ANA template: {ana_template_path}")
+    print(f"Output PDB: {output_path}")
+    if report_path:
+        print(f"Report: {report_path}")
+    print(f"Converted residues: {len(records)}")
+    print(f"Source sequence: {source_sequence}")
+    print(f"Mean anchor RMSD: {np.mean([r.anchor_rmsd for r in records]):.4f} Å")
+    print(f"Max anchor RMSD: {max(r.anchor_rmsd for r in records):.4f} Å")
+    print("-" * 80)
+    print("Chain-continuity validation:")
+    print(f"  O3′(i)→P(i+1): {validation_status(output_o3p)}")
+    print(f"  measured={output_o3p.measured}, failed={output_o3p.failed}, "
+          f"mean={output_o3p.mean:.3f} Å, min={output_o3p.minimum:.3f} Å, max={output_o3p.maximum:.3f} Å")
+    print("=" * 80)
 
     return records
 
 
-def main() -> None:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Prototype 002A: fragment-guided RNA to ANA candidate reconstruction"
+        description="Prototype 002A.1: fragment-guided RNA to ANA converter with chain-continuity validation."
     )
-    parser.add_argument("--rna", required=True, type=Path, help="Input RNA PDB")
-    parser.add_argument("--template", required=True, type=Path, help="ANA fragment/template PDB")
-    parser.add_argument("--output", required=True, type=Path, help="Output ANA-like candidate PDB")
-    parser.add_argument("--report", type=Path, default=None, help="Optional Markdown conversion report")
+    parser.add_argument("--rna", "--source", dest="rna", required=True, type=Path, help="Source RNA PDB file")
+    parser.add_argument("--template", required=True, type=Path, help="ANA fragment/template PDB file")
+    parser.add_argument("--output", required=True, type=Path, help="Output ANA-like candidate PDB file")
+    parser.add_argument("--report", type=Path, default=None, help="Optional Markdown report output")
     parser.add_argument(
         "--anchors",
         nargs="+",
         default=DEFAULT_ANCHORS,
-        help="Shared local anchor atoms for Kabsch alignment",
+        help="Anchor atoms used for local Kabsch alignment",
     )
     parser.add_argument(
         "--no-fix-c1",
         action="store_true",
-        help="Do not translate transformed ANA backbone to pin C1' to source RNA C1'",
+        help="Do not pin transformed ANA C1' to source RNA C1' after alignment",
     )
     parser.add_argument(
         "--naming-policy",
         choices=["template-observed", "provisional"],
         default="template-observed",
-        help="Residue naming policy for output ANA-like residues",
+        help="ANA residue naming policy",
     )
+    parser.add_argument(
+        "--op-min",
+        type=float,
+        default=1.4,
+        help="Minimum plausible O3'(i)→P(i+1) distance in Å",
+    )
+    parser.add_argument(
+        "--op-max",
+        type=float,
+        default=1.8,
+        help="Maximum plausible O3'(i)→P(i+1) distance in Å",
+    )
+    parser.add_argument(
+        "--po5-min",
+        type=float,
+        default=1.4,
+        help="Minimum plausible P(i)→O5'(i) distance in Å",
+    )
+    parser.add_argument(
+        "--po5-max",
+        type=float,
+        default=1.8,
+        help="Maximum plausible P(i)→O5'(i) distance in Å",
+    )
+    parser.add_argument(
+        "--include-numbering-gaps",
+        action="store_true",
+        help="Validate links across residue-numbering gaps. Default skips gaps.",
+    )
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
+def main() -> None:
+    args = parse_args()
 
-    records = convert(
+    convert(
         args.rna,
         args.template,
         args.output,
@@ -802,23 +1172,12 @@ def main() -> None:
         anchors=args.anchors,
         fix_c1=not args.no_fix_c1,
         naming_policy=args.naming_policy,
+        op_min=args.op_min,
+        op_max=args.op_max,
+        po5_min=args.po5_min,
+        po5_max=args.po5_max,
+        skip_numbering_gaps=not args.include_numbering_gaps,
     )
-
-    rmsds = [r.anchor_rmsd for r in records]
-    print("=" * 80)
-    print("Digital Polymerase Prototype 002A")
-    print("Fragment-guided RNA -> ANA candidate reconstruction")
-    print("=" * 80)
-    print(f"Converted residues: {len(records)}")
-    print(f"Mean anchor RMSD: {sum(rmsds) / len(rmsds):.4f} Å")
-    print(f"Max anchor RMSD:  {max(rmsds):.4f} Å")
-    print(f"Output PDB:       {args.output}")
-    if args.report:
-        print(f"Report:           {args.report}")
-    print("")
-    print("WARNING: This is a computational candidate only.")
-    print("WARNING: Not energy-minimized, force-field-validated, or experimentally verified.")
-    print("=" * 80)
 
 
 if __name__ == "__main__":
