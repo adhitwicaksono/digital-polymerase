@@ -1,0 +1,261 @@
+REMARK   BIOVIA PDB file
+REMARK   Created:  2021-09-18T19:02:44Z
+CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1          
+MODEL        1
+HETATM    1  P   GAO A   9      -9.289   1.593   5.797  1.00  0.00           P  
+HETATM    2  OP1 GAO A   9     -10.751   1.646   5.581  1.00  0.00           O  
+HETATM    3  OP2 GAO A   9      -8.552   0.333   5.549  1.00  0.00           O1-
+HETATM    4  O5' GAO A   9      -8.604   2.752   4.911  1.00  0.00           O  
+HETATM    5  C5' GAO A   9      -8.919   4.143   5.127  1.00  0.00           C  
+HETATM    6  C4' GAO A   9      -7.734   5.055   4.858  1.00  0.00           C  
+HETATM    7  O4' GAO A   9      -6.625   4.714   5.699  1.00  0.00           O  
+HETATM    8  C3' GAO A   9      -7.260   4.938   3.415  1.00  0.00           C  
+HETATM    9  O3' GAO A   9      -7.640   6.106   2.664  1.00  0.00           O  
+HETATM   10  C2' GAO A   9      -5.759   4.794   3.499  1.00  0.00           C  
+HETATM   11  O2' GAO A   9      -5.347   3.507   3.013  1.00  0.00           O  
+HETATM   12  C1' GAO A   9      -5.422   4.971   4.968  1.00  0.00           C  
+HETATM   13  N9  GAO A   9      -4.347   4.066   5.406  1.00  0.00           N  
+HETATM   14  C8  GAO A   9      -4.358   2.722   5.517  1.00  0.00           C  
+HETATM   15  N7  GAO A   9      -3.302   2.149   5.991  1.00  0.00           N  
+HETATM   16  C5  GAO A   9      -2.468   3.249   6.228  1.00  0.00           C  
+HETATM   17  C6  GAO A   9      -1.146   3.305   6.753  1.00  0.00           C  
+HETATM   18  O6  GAO A   9      -0.428   2.384   7.137  1.00  0.00           O  
+HETATM   19  N1  GAO A   9      -0.686   4.606   6.817  1.00  0.00           N  
+HETATM   20  C2  GAO A   9      -1.393   5.721   6.430  1.00  0.00           C  
+HETATM   21  N2  GAO A   9      -0.778   6.882   6.560  1.00  0.00           N  
+HETATM   22  N3  GAO A   9      -2.627   5.685   5.941  1.00  0.00           N  
+HETATM   23  C4  GAO A   9      -3.106   4.427   5.865  1.00  0.00           C  
+HETATM   24  H5' GAO A   9      -9.186   4.299   6.159  1.00  0.00           H  
+HETATM   25 'H5' GAO A   9      -9.770   4.412   4.474  1.00  0.00           H  
+HETATM   26  H4' GAO A   9      -8.011   6.087   5.054  1.00  0.00           H  
+HETATM   27  H3' GAO A   9      -7.683   4.037   2.961  1.00  0.00           H  
+HETATM   28  H2' GAO A   9      -5.281   5.582   2.924  1.00  0.00           H  
+HETATM   29 'HO2 GAO A   9      -5.818   3.350   2.189  1.00  0.00           H  
+HETATM   30  H1' GAO A   9      -5.125   6.002   5.141  1.00  0.00           H  
+HETATM   31  H8  GAO A   9      -5.226   2.145   5.205  1.00  0.00           H  
+HETATM   32  H1  GAO A   9       0.242   4.722   7.183  1.00  0.00           H  
+HETATM   33  H21 GAO A   9       0.163   6.917   6.931  1.00  0.00           H  
+HETATM   34  H22 GAO A   9      -1.247   7.731   6.288  1.00  0.00           H  
+HETATM   35  P   UAR A  10      -7.229   6.278   1.113  1.00  0.00           P  
+HETATM   36  OP1 UAR A  10      -8.058   7.354   0.527  1.00  0.00           O  
+HETATM   37  OP2 UAR A  10      -7.208   4.935   0.488  1.00  0.00           O1-
+HETATM   38  O5' UAR A  10      -5.709   6.803   1.216  1.00  0.00           O  
+HETATM   39  C5' UAR A  10      -5.405   8.081   1.794  1.00  0.00           C  
+HETATM   40  C4' UAR A  10      -3.902   8.258   2.001  1.00  0.00           C  
+HETATM   41  O4' UAR A  10      -3.381   7.271   2.898  1.00  0.00           O  
+HETATM   42  C3' UAR A  10      -3.139   8.116   0.692  1.00  0.00           C  
+HETATM   43  O3' UAR A  10      -2.777   9.406   0.165  1.00  0.00           O  
+HETATM   44  C2' UAR A  10      -1.922   7.290   1.032  1.00  0.00           C  
+HETATM   45  O2' UAR A  10      -1.928   6.060   0.291  1.00  0.00           O  
+HETATM   46  C1' UAR A  10      -2.017   7.036   2.532  1.00  0.00           C  
+HETATM   47  N1  UAR A  10      -1.607   5.661   2.891  1.00  0.00           N  
+HETATM   48  C2  UAR A  10      -0.365   5.483   3.479  1.00  0.00           C  
+HETATM   49  O2  UAR A  10       0.411   6.411   3.685  1.00  0.00           O  
+HETATM   50  N3  UAR A  10      -0.041   4.191   3.820  1.00  0.00           N  
+HETATM   51  C4  UAR A  10      -0.826   3.074   3.634  1.00  0.00           C  
+HETATM   52  O4  UAR A  10      -0.429   1.971   3.990  1.00  0.00           O  
+HETATM   53  C5  UAR A  10      -2.099   3.344   3.015  1.00  0.00           C  
+HETATM   54  C6  UAR A  10      -2.446   4.604   2.667  1.00  0.00           C  
+HETATM   55  H5' UAR A  10      -5.908   8.167   2.758  1.00  0.00           H  
+HETATM   56 'H5' UAR A  10      -5.768   8.867   1.132  1.00  0.00           H  
+HETATM   57  H4' UAR A  10      -3.700   9.242   2.419  1.00  0.00           H  
+HETATM   58  H3' UAR A  10      -3.752   7.567  -0.030  1.00  0.00           H  
+HETATM   59  H2' UAR A  10      -1.014   7.859   0.815  1.00  0.00           H  
+HETATM   60 'HO2 UAR A  10      -2.144   6.279  -0.620  1.00  0.00           H  
+HETATM   61  H1' UAR A  10      -1.392   7.757   3.052  1.00  0.00           H  
+HETATM   62  H3  UAR A  10       0.863   4.048   4.246  1.00  0.00           H  
+HETATM   63  H5  UAR A  10      -2.791   2.524   2.826  1.00  0.00           H  
+HETATM   64  H6  UAR A  10      -3.410   4.779   2.192  1.00  0.00           H  
+HETATM   65  P   CAR A  11      -2.066   9.551  -1.277  1.00  0.00           P  
+HETATM   66  OP1 CAR A  11      -2.145  10.969  -1.691  1.00  0.00           O  
+HETATM   67  OP2 CAR A  11      -2.592   8.489  -2.164  1.00  0.00           O1-
+HETATM   68  O5' CAR A  11      -0.530   9.203  -0.939  1.00  0.00           O  
+HETATM   69  C5' CAR A  11       0.246  10.045  -0.073  1.00  0.00           C  
+HETATM   70  C4' CAR A  11       1.542   9.362   0.354  1.00  0.00           C  
+HETATM   71  O4' CAR A  11       1.277   8.150   1.072  1.00  0.00           O  
+HETATM   72  C3' CAR A  11       2.397   8.988  -0.850  1.00  0.00           C  
+HETATM   73  O3' CAR A  11       3.495   9.905  -1.004  1.00  0.00           O  
+HETATM   74  C2' CAR A  11       2.883   7.587  -0.569  1.00  0.00           C  
+HETATM   75  O2' CAR A  11       2.359   6.669  -1.542  1.00  0.00           O  
+HETATM   76  C1' CAR A  11       2.375   7.264   0.829  1.00  0.00           C  
+HETATM   77  N1  CAR A  11       1.959   5.849   0.958  1.00  0.00           N  
+HETATM   78  C2  CAR A  11       2.821   4.971   1.605  1.00  0.00           C  
+HETATM   79  O2  CAR A  11       3.903   5.361   2.040  1.00  0.00           O  
+HETATM   80  N3  CAR A  11       2.435   3.674   1.738  1.00  0.00           N  
+HETATM   81  C4  CAR A  11       1.264   3.250   1.262  1.00  0.00           C  
+HETATM   82  N4  CAR A  11       0.929   1.972   1.417  1.00  0.00           N  
+HETATM   83  C5  CAR A  11       0.374   4.145   0.594  1.00  0.00           C  
+HETATM   84  C6  CAR A  11       0.758   5.428   0.464  1.00  0.00           C  
+HETATM   85  H5' CAR A  11      -0.340  10.282   0.816  1.00  0.00           H  
+HETATM   86 'H5' CAR A  11       0.487  10.970  -0.598  1.00  0.00           H  
+HETATM   87  H4' CAR A  11       2.114  10.025   0.998  1.00  0.00           H  
+HETATM   88  H3' CAR A  11       1.777   8.979  -1.751  1.00  0.00           H  
+HETATM   89  H2' CAR A  11       3.976   7.563  -0.576  1.00  0.00           H  
+HETATM   90 'HO2 CAR A  11       2.429   7.095  -2.402  1.00  0.00           H  
+HETATM   91  H1' CAR A  11       3.160   7.485   1.549  1.00  0.00           H  
+HETATM   92 1HN4 CAR A  11       1.565   1.335   1.893  1.00  0.00           H  
+HETATM   93 2HN4 CAR A  11       0.044   1.634   1.065  1.00  0.00           H  
+HETATM   94  H5  CAR A  11      -0.584   3.801   0.203  1.00  0.00           H  
+HETATM   95  H6  CAR A  11       0.105   6.138  -0.043  1.00  0.00           H  
+HETATM   96  P   CAR A  12       4.477   9.819  -2.280  1.00  0.00           P  
+HETATM   97  OP1 CAR A  12       5.348  11.014  -2.279  1.00  0.00           O  
+HETATM   98  OP2 CAR A  12       3.662   9.496  -3.473  1.00  0.00           O1-
+HETATM   99  O5' CAR A  12       5.379   8.528  -1.931  1.00  0.00           O  
+HETATM  100  C5' CAR A  12       6.389   8.584  -0.913  1.00  0.00           C  
+HETATM  101  C4' CAR A  12       7.021   7.215  -0.679  1.00  0.00           C  
+HETATM  102  O4' CAR A  12       6.072   6.268  -0.164  1.00  0.00           O  
+HETATM  103  C3' CAR A  12       7.567   6.629  -1.975  1.00  0.00           C  
+HETATM  104  O3' CAR A  12       8.990   6.806  -2.069  1.00  0.00           O  
+HETATM  105  C2' CAR A  12       7.190   5.170  -1.933  1.00  0.00           C  
+HETATM  106  O2' CAR A  12       6.289   4.853  -3.007  1.00  0.00           O  
+HETATM  107  C1' CAR A  12       6.519   4.973  -0.579  1.00  0.00           C  
+HETATM  108  N1  CAR A  12       5.402   4.003  -0.659  1.00  0.00           N  
+HETATM  109  C2  CAR A  12       5.640   2.709  -0.212  1.00  0.00           C  
+HETATM  110  O2  CAR A  12       6.734   2.404   0.252  1.00  0.00           O  
+HETATM  111  N3  CAR A  12       4.634   1.800  -0.299  1.00  0.00           N  
+HETATM  112  C4  CAR A  12       3.445   2.138  -0.799  1.00  0.00           C  
+HETATM  113  N4  CAR A  12       2.493   1.213  -0.879  1.00  0.00           N  
+HETATM  114  C5  CAR A  12       3.188   3.469  -1.258  1.00  0.00           C  
+HETATM  115  C6  CAR A  12       4.190   4.365  -1.170  1.00  0.00           C  
+HETATM  116  H5' CAR A  12       5.942   8.934   0.018  1.00  0.00           H  
+HETATM  117 'H5' CAR A  12       7.165   9.286  -1.222  1.00  0.00           H  
+HETATM  118  H4' CAR A  12       7.839   7.309   0.034  1.00  0.00           H  
+HETATM  119  H3' CAR A  12       7.066   7.101  -2.827  1.00  0.00           H  
+HETATM  120 'HO3 CAR A  12       9.261   6.490  -2.935  1.00  0.00           H  
+HETATM  121  H2' CAR A  12       8.088   4.550  -1.995  1.00  0.00           H  
+HETATM  122 'HO2 CAR A  12       5.540   5.451  -2.937  1.00  0.00           H  
+HETATM  123  H1' CAR A  12       7.263   4.618   0.134  1.00  0.00           H  
+HETATM  124 1HN4 CAR A  12       2.676   0.269  -0.553  1.00  0.00           H  
+HETATM  125 2HN4 CAR A  12       1.592   1.448  -1.267  1.00  0.00           H  
+HETATM  126  H5  CAR A  12       2.216   3.748  -1.665  1.00  0.00           H  
+HETATM  127  H6  CAR A  12       4.031   5.389  -1.511  1.00  0.00           H  
+TER     128      CAR A  12 
+ENDMDL
+CONECT    1    2    3    4
+CONECT    2    1
+CONECT    3    1
+CONECT    4    1    5
+CONECT    5    4    6   24   25
+CONECT    6    5    7    8   26
+CONECT    7    6   12
+CONECT    8    6    9   10   27
+CONECT    9    8   35
+CONECT   10    8   11   12   28
+CONECT   11   10   29
+CONECT   12    7   10   13   30
+CONECT   13   12   14   23
+CONECT   14   13   15   31
+CONECT   15   14   16
+CONECT   16   15   17   23
+CONECT   17   16   18   19
+CONECT   18   17
+CONECT   19   17   20   32
+CONECT   20   19   21   22
+CONECT   21   20   33   34
+CONECT   22   20   23
+CONECT   23   13   16   22
+CONECT   24    5
+CONECT   25    5
+CONECT   26    6
+CONECT   27    8
+CONECT   28   10
+CONECT   29   11
+CONECT   30   12
+CONECT   31   14
+CONECT   32   19
+CONECT   33   21
+CONECT   34   21
+CONECT   35   36   37   38    9
+CONECT   36   35
+CONECT   37   35
+CONECT   38   35   39
+CONECT   39   38   40   55   56
+CONECT   40   39   41   42   57
+CONECT   41   40   46
+CONECT   42   40   43   44   58
+CONECT   43   42   65
+CONECT   44   42   45   46   59
+CONECT   45   44   60
+CONECT   46   41   44   47   61
+CONECT   47   46   48   54
+CONECT   48   47   49   50
+CONECT   49   48
+CONECT   50   48   51   62
+CONECT   51   50   52   53
+CONECT   52   51
+CONECT   53   51   54   63
+CONECT   54   47   53   64
+CONECT   55   39
+CONECT   56   39
+CONECT   57   40
+CONECT   58   42
+CONECT   59   44
+CONECT   60   45
+CONECT   61   46
+CONECT   62   50
+CONECT   63   53
+CONECT   64   54
+CONECT   65   66   67   68   43
+CONECT   66   65
+CONECT   67   65
+CONECT   68   65   69
+CONECT   69   68   70   85   86
+CONECT   70   69   71   72   87
+CONECT   71   70   76
+CONECT   72   70   73   74   88
+CONECT   73   72   96
+CONECT   74   72   75   76   89
+CONECT   75   74   90
+CONECT   76   71   74   77   91
+CONECT   77   76   78   84
+CONECT   78   77   79   80
+CONECT   79   78
+CONECT   80   78   81
+CONECT   81   80   82   83
+CONECT   82   81   92   93
+CONECT   83   81   84   94
+CONECT   84   77   83   95
+CONECT   85   69
+CONECT   86   69
+CONECT   87   70
+CONECT   88   72
+CONECT   89   74
+CONECT   90   75
+CONECT   91   76
+CONECT   92   82
+CONECT   93   82
+CONECT   94   83
+CONECT   95   84
+CONECT   96   97   98   99   73
+CONECT   97   96
+CONECT   98   96
+CONECT   99   96  100
+CONECT  100   99  101  116  117
+CONECT  101  100  102  103  118
+CONECT  102  101  107
+CONECT  103  101  104  105  119
+CONECT  104  103  120
+CONECT  105  103  106  107  121
+CONECT  106  105  122
+CONECT  107  102  105  108  123
+CONECT  108  107  109  115
+CONECT  109  108  110  111
+CONECT  110  109
+CONECT  111  109  112
+CONECT  112  111  113  114
+CONECT  113  112  124  125
+CONECT  114  112  115  126
+CONECT  115  108  114  127
+CONECT  116  100
+CONECT  117  100
+CONECT  118  101
+CONECT  119  103
+CONECT  120  104
+CONECT  121  105
+CONECT  122  106
+CONECT  123  107
+CONECT  124  113
+CONECT  125  113
+CONECT  126  114
+CONECT  127  115
+END
