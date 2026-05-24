@@ -677,8 +677,7 @@ All generated code and structural outputs should be critically reviewed, tested,
 
 ## Author
 
-Developed by **Adhityo Wicaksono**  
-in collaboration with **Prof. Dr. rer. nat. Arli Aditya Parikesit**  
+Developed by **Adhityo Wicaksono**   
 as part of an ongoing computational exploration of nucleic acid diversity, xenobiology, and the dry-lab side of the **XNA World Project**.
 
 ---
