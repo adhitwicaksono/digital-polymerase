@@ -4,11 +4,35 @@
 
 # Digital Polymerase
 
-**Digital Polymerase** is an early-stage dry-lab software project for exploring computational conversion and reconstruction between canonical nucleic acids (**DNA** and **RNA**) and xeno/synthetic nucleic acids (**XNA**) such as **HNA, ANA, FANA, CeNA, XyNA, TNA, GNA, PNA**, and future targets such as **morpholino nucleic acids** when suitable structural templates become available.
+**Digital Polymerase** is an early-stage dry-lab software project for exploring computational conversion and reconstruction between canonical nucleic acids (**DNA** and **RNA**) and xeno/synthetic nucleic acids (**XNA**) such as **HNA, ANA, FANA, CeNA, XyNA, TNA, GNA, and PNA**.
 
-The project focuses on **structure-guided nucleic acid transformation**, especially using **PDB structures as input and output**. Rather than treating conversion as a simple atom-replacement problem, Digital Polymerase develops template-guided, chain-aware, linkage-aware, scaffold-aware, and polymer-aware approaches for rebuilding nucleic acid candidate structures across different backbone chemistries.
+The project focuses on **structure-guided nucleic acid transformation**, especially using **PDB structures as input and output**. Rather than treating conversion as a simple atom-replacement problem, Digital Polymerase develops **template-guided**, **chain-aware**, **linkage-aware**, **scaffold-aware**, and **polymer-aware** approaches for rebuilding candidate nucleic acid structures across different backbone chemistries.
 
-All generated structures should be interpreted as **computational candidate models**, not experimentally validated molecules. They require downstream structural validation such as geometry inspection, stereochemical review, energy minimization, molecular dynamics simulation, force-field/topology assessment, and expert chemical evaluation.
+All generated structures should be interpreted as **computational candidate models**, not experimentally validated molecules. They require downstream geometry inspection, stereochemical review, energy minimization, molecular dynamics simulation, force-field/topology assessment, and expert chemical evaluation.
+
+---
+
+## Current Snapshot
+
+Digital Polymerase currently has:
+
+- reusable `core/` modules for atoms, residues, PDB I/O, geometry, template handling, target registry, validation, reporting, and custom errors
+- prototype RNA → XNA candidate generators for **HNA, ANA, FANA, CeNA, XyNA, TNA, GNA, and PNA**
+- benchmark folders containing inputs, templates, outputs, reports, screenshots, and failure notes
+- a reserved `converters/` folder for future stable or semi-stable converter modules
+- smoke tests for the first core package
+
+The project is currently transitioning from:
+
+```text
+one-off prototype scripts
+```
+
+toward:
+
+```text
+shared core engine → stable converter wrappers → benchmark/regression suite
+```
 
 ---
 
@@ -52,20 +76,165 @@ A second major lesson from the PNA prototypes is:
 
 ---
 
-## Goals
+## Scope
 
-- Convert nucleic acid structures between **DNA, RNA, and XNA types**
-- Support **PDB-based structural transformation**
-- Develop a modular framework for **polymer-aware parsing, alignment, rebuilding, validation, and export**
-- Preserve sequence information while allowing backbone chemistry to change
-- Distinguish **local residue geometry** from **whole-polymer chain continuity**
-- Distinguish **fold-preserving conversion** from **sequence-carrier generation**
-- Facilitate future modeling of **alternative nucleic acid worlds**
-- Serve as a computational support layer for **xenobiology, synthetic biology, computational structural biology, nucleic acid engineering, and origins-of-life research**
+This repository is intended as a **dry-lab computational tool**, not as a replacement for experimental validation.
+
+Its long-term purpose is to help researchers explore possible structural scenarios in which functional XNA molecules may exist, interact, or be compared with canonical nucleic acids.
+
+Digital Polymerase is especially intended for exploratory work in:
+
+- xenobiology
+- synthetic biology
+- computational structural biology
+- nucleic acid engineering
+- alternative genetic polymers
+- origins-of-life and astrobiology-inspired molecular systems
 
 ---
 
-## Current Working Prototype Families
+## Quick Start
+
+Install locally:
+
+```bash
+pip install -e .
+```
+
+Run smoke tests:
+
+```bash
+pytest
+```
+
+The current package is still early-stage. Most conversion scripts remain in:
+
+```text
+src/digital_polymerase/prototypes/
+```
+
+The `converters/` directory is reserved for future stable wrappers.
+
+---
+
+## Repository Structure
+
+Current major structure:
+
+```text
+digital-polymerase/
+├── README.md
+├── LICENSE
+├── pyproject.toml
+├── requirements.txt
+├── assets/
+│   ├── digital_polymerase_banner.png
+│   ├── digital_polymerase_banner__v2.png
+│   └── digital_polymerase_banner_v3.png
+│
+├── src/
+│   └── digital_polymerase/
+│       ├── __init__.py
+│       ├── core/
+│       │   ├── README.md
+│       │   ├── __init__.py
+│       │   ├── atoms.py
+│       │   ├── residues.py
+│       │   ├── pdb_io.py
+│       │   ├── geometry.py
+│       │   ├── templates.py
+│       │   ├── registry.py
+│       │   ├── validation.py
+│       │   ├── reporting.py
+│       │   └── errors.py
+│       │
+│       ├── converters/
+│       │   └── README.md
+│       │
+│       └── prototypes/
+│           ├── rna_to_hna_template_based.py
+│           ├── rna_to_hna_template_guided.py
+│           ├── rna_to_ana_fragment_guided_002A2.py
+│           ├── rna_to_fana_fragment_guided.py
+│           ├── rna_to_cena_template_guided.py
+│           ├── rna_to_xyna_fragment_guided.py
+│           ├── rna_to_tna_linkage_optimized.py
+│           ├── rna_to_gna_linkage_optimized.py
+│           └── failed/
+│               ├── ana/
+│               └── pna/
+│
+├── docs/
+│   ├── core_package.md
+│   ├── prompt_protocol.md
+│   ├── prototype_001_rna_to_hna.md
+│   ├── prototype_001B_rna_to_hna_template_guided.md
+│   ├── prototype_002A_rna_to_ana_fragment_guided.md
+│   ├── prototype_003A_run_summary.md
+│   ├── prototype_004A_rna_to_cena_template_guided.md
+│   ├── prototype_005A_rna_to_xyna_fragment_guided.md
+│   ├── prototype_006B_rna_to_tna_linkage_optimized.md
+│   └── prototype_007A_rna_to_gna_linkage_optimized.md
+│
+├── examples/
+│   └── rna_to_hna_8mer/
+│
+├── benchmarks/
+│   ├── hh_ribozyme_8t5o/
+│   ├── hna_template_regression/
+│   ├── ana_fragment_scaling/
+│   ├── fana_fragment_scaling/
+│   ├── cena_scaling/
+│   ├── xyna_scaling/
+│   ├── tna_scaling/
+│   ├── gna_scaling/
+│   └── pna_scaling/
+│
+└── tests/
+    └── test_core_smoke.py
+```
+
+---
+
+## Core Engine
+
+The `core/` package contains reusable building blocks shared by prototypes and future stable converter modules.
+
+| Module | Purpose |
+|---|---|
+| `atoms.py` | `Atom` dataclass, element inference, atom cloning |
+| `residues.py` | Base identity, glycosidic atom, sequence extraction, base/backbone splitting |
+| `pdb_io.py` | Simple PDB parser and writer |
+| `geometry.py` | Kabsch alignment, RMSD, distance, angle, dihedral, coordinate transforms |
+| `templates.py` | Template indexing and base-class donor selection |
+| `registry.py` | XNA target grammar and validation defaults |
+| `validation.py` | Chain/linkage/base-attachment/local geometry validation |
+| `reporting.py` | Markdown and JSON report helpers |
+| `errors.py` | Custom exceptions |
+
+The core is not a converter by itself. It provides reusable parts. Converters should define the reconstruction strategy.
+
+---
+
+## Conversion Strategy Classes
+
+The prototypes have revealed that Digital Polymerase needs multiple conversion paradigms rather than one universal algorithm.
+
+| Strategy class | Description | Example prototypes |
+|---|---|---|
+| **Full-template-guided reconstruction** | Use a target XNA template as the primary scaffold and transplant sequence/base identity | `001B` |
+| **Chain-preserving reconstruction** | Preserve RNA chain continuity first, then introduce target local scaffold geometry | `001C.1`, `002A.2`, `003A` |
+| **Template-guided scaffold reconstruction** | Use target scaffold geometry as a donor while retaining source sequence identity | `004A`, `005A` |
+| **Linkage-remapped reconstruction** | Replace canonical RNA linkage assumptions with target-XNA-specific linkage grammar | `006B.4`, `007A` |
+| **Template-primary scaffold-first reconstruction** | Preserve/tile target scaffold first, then map base identity | `008B` |
+| **Sequence-primary generation** | Generate a target XNA sequence carrier from sequence, FASTA, or RNA-derived sequence | `008C` |
+| **Hybrid-guided boundary testing** | Combine RNA spatial information with target-XNA local chemistry under movement limits | `008D` |
+
+This distinction is one of the main conceptual outputs of the project so far.
+
+---
+
+## Current Prototype Families
 
 Digital Polymerase currently contains multiple RNA → XNA candidate-generation prototype families. These are **prototype candidate generators**, not stable production converters.
 
@@ -79,71 +248,18 @@ Digital Polymerase currently contains multiple RNA → XNA candidate-generation 
 | `005A` | RNA → XyNA | Pentose-like template-guided reconstruction | Successful candidate generation up to 111 nt |
 | `006B.4` | RNA → TNA | Linkage-remapped threose-scaffold reconstruction | Successful candidate generation up to 111 nt |
 | `007A` | RNA → GNA | Linkage-optimized glycerol-scaffold reconstruction | Successful first-pass candidate generation up to 111 nt |
+| `008A.1` | RNA → PNA | RNA-fold-forced pseudopeptide reconstruction | Failed/tangled; archived as productive failure |
 | `008B` | RNA → PNA | Template-primary PNA scaffold-first base replacement | Successful sequence-preserving PNA candidate generation |
 | `008C` | Sequence/RNA/FASTA → PNA | Sequence-primary PNA generator | Useful sequence-carrier generator; not fold-preserving |
 | `008D` | RNA → PNA | RNA-informed hybrid-guided PNA reconstruction | Boundary/partial result; fold-preserving PNA remains unsolved |
 
 ---
 
-## Conversion Strategy Classes
+## Prototype Notes
 
-The prototypes have revealed that Digital Polymerase needs multiple conversion paradigms rather than one universal algorithm.
+### HNA
 
-| Strategy class | Description | Example prototypes |
-|---|---|---|
-| **Full-template-guided reconstruction** | Use a target XNA template as the primary scaffold and transplant sequence/base identity | `001B` |
-| **Chain-preserving reconstruction** | Preserve RNA chain continuity first, then introduce target local scaffold geometry | `001C.1`, `002A.2`, `003A` |
-| **Linkage-remapped reconstruction** | Replace canonical RNA linkage assumptions with target-XNA-specific linkage grammar | `006B.4`, `007A` |
-| **Template-primary scaffold-first reconstruction** | Preserve/tile target scaffold first, then map base identity | `008B` |
-| **Sequence-primary generation** | Generate a target XNA sequence carrier from sequence, FASTA, or RNA-derived sequence | `008C` |
-| **Hybrid-guided boundary testing** | Combine RNA spatial information with target-XNA local chemistry under movement limits | `008D` |
-
-This distinction is one of the main conceptual outputs of the project so far.
-
----
-
-## Prototype 001B/001C.1: RNA → HNA
-
-The HNA family began as the first RNA → XNA proof of concept, then evolved into a refactored and scalable prototype family.
-
-### Prototype 001B — full-template HNA reconstruction
-
-Prototype 001B is used when a full-length HNA template is available.
-
-Example:
-
-```text
-RNA-8mer.pdb + 481d-HNA8nt.pdb → HNA-like 8-mer candidate
-```
-
-The method:
-
-1. uses the HNA template as the backbone/scaffold donor
-2. aligns RNA base atoms into the HNA local frame
-3. transplants RNA bases onto the HNA scaffold
-4. validates chain continuity and base attachment
-
-### Prototype 001C.1 — scalable chain-preserving HNA reconstruction
-
-Prototype 001C.1 extends HNA reconstruction to RNA inputs longer than the available HNA template.
-
-Example benchmarked inputs:
-
-```text
-RNA-12mer
-RNA-16mer
-RNA-22mer
-RNA-34mer
-HH-type I ribozyme-derived 111-mer
-```
-
-The method:
-
-1. preserves RNA chain-continuity atoms
-2. inserts local HNA scaffold atoms such as `O4′`, `C6′`, `C1′`, and `C2′`
-3. transforms RNA bases onto the new HNA-like local scaffold
-4. corrects C1′→glycosidic-N distance using the selected HNA template
-5. validates O3′→P, C1′→N, C1′→C6′, and C6′→O4′ distances
+The HNA family began as the first RNA → XNA proof of concept, then evolved into scalable chain-preserving reconstruction.
 
 Current benchmark result:
 
@@ -153,19 +269,15 @@ HNA-like candidate generation scales from 8 nt to 111 nt.
 
 ---
 
-## Prototype 002A.2: RNA → ANA
+### ANA
 
-The ANA prototype began as a residue-local fragment-guided converter using a 4-mer ANA template.
-
-Initial ANA reconstruction showed a critical failure mode:
+The ANA prototype revealed a critical failure mode:
 
 ```text
 low local RMSD ≠ valid polymer chain
 ```
 
-Patch 002A.1 added explicit chain-continuity validation and revealed that residue-local conversion broke many O3′→P links.
-
-Patch 002A.2 introduced a chain-preserving strategy:
+Patch `002A.2` introduced a chain-preserving strategy:
 
 ```text
 preserve chain continuity first
@@ -181,178 +293,72 @@ RNA → ANA chain-preserving candidate generation works visually and computation
 
 ---
 
-## Prototype 003A: RNA → FANA
+### FANA
 
-Prototype 003A applies the chain-preserving design principle from the beginning.
-
-For FANA, the converter:
-
-1. preserves RNA polymer-chain atoms
-2. removes RNA O2′
-3. introduces FANA-like C2′ and F2′ local geometry from a FANA template
-4. preserves RNA bases
-5. validates O3′→P, P→O5′, C1′→C2′, C2′→C3′, and C2′→F2′ geometry
+Prototype `003A` applies chain-preserving logic with FANA-specific C2′/F2′ local geometry.
 
 Current status:
 
 ```text
-RNA → FANA candidate generation works from 8 nt to 111 nt, with C2′→F2′ distances around the expected template-derived range.
+RNA → FANA candidate generation works from 8 nt to 111 nt.
 ```
+
+FANA is the recommended first candidate for future stable converter refactoring because its strategy is clear, chain-aware, and chemically interpretable.
 
 ---
 
-## Prototype 004A: RNA → CeNA
+### CeNA and XyNA
 
-Prototype 004A explores RNA → CeNA candidate generation.
-
-CeNA uses a cyclohexenyl-like scaffold, so it is not merely a small local sugar edit. The converter treats CeNA as a template-guided scaffold reconstruction problem.
+CeNA and XyNA are handled as template-guided scaffold reconstruction cases.
 
 Current status:
 
 ```text
-RNA → CeNA candidate generation works from 8 nt to 111 nt as a first-pass computational model.
+RNA → CeNA and RNA → XyNA candidate generation work from 8 nt to 111 nt as first-pass computational models.
 ```
 
 ---
 
-## Prototype 005A: RNA → XyNA
+### TNA and GNA
 
-Prototype 005A explores RNA → XyNA candidate generation.
+TNA and GNA required linkage-aware reconstruction.
 
-XyNA is closer to canonical pentose-like logic than PNA or GNA, making it more amenable to template-guided candidate reconstruction.
+TNA uses a threose-like scaffold. GNA uses a compact glycerol-like scaffold.
 
-Current status:
-
-```text
-RNA → XyNA candidate generation works from 8 nt to 111 nt.
-```
-
----
-
-## Prototype 006B.4: RNA → TNA
-
-TNA required a more careful linkage-remapping strategy because it uses a threose-like scaffold.
-
-The key lesson from TNA:
-
-```text
-TNA cannot be treated as RNA with a cosmetic sugar replacement.
-Target-specific linkage grammar matters.
-```
-
-Current status:
-
-```text
-RNA → TNA candidate generation works from 8 nt to 111 nt using linkage-remapped reconstruction.
-```
-
----
-
-## Prototype 007A: RNA → GNA
-
-GNA uses a compact glycerol-like scaffold.
-
-The observed GNA-like linkage pattern is:
+For GNA, the observed linkage pattern is:
 
 ```text
 P(i)    → O3G(i)
 O2G(i) → P(i+1)
 ```
 
-Prototype 007A treats GNA as a linkage-optimized glycerol-scaffold reconstruction problem rather than a chain-preserving RNA sugar-edit problem.
-
 Current status:
 
 ```text
-RNA → GNA candidate generation works as a successful first-pass prototype from 8 nt to 111 nt.
-```
-
-Known caveat:
-
-```text
-GNA outputs are compact/crowded and require explicit base-orientation, carbonyl/base-atom, stereochemical, and force-field validation.
+RNA → TNA and RNA → GNA candidate generation work from 8 nt to 111 nt, but require stronger stereochemical, base-orientation, and force-field validation.
 ```
 
 ---
 
-## Prototype 008B/008C/008D: RNA/Sequence → PNA
+### PNA
 
-PNA became the strongest boundary case in Digital Polymerase because it is not a sugar-phosphate-like XNA.
+PNA became the strongest boundary case because it is not a sugar-phosphate-like XNA.
 
 PNA uses a pseudopeptide backbone with nucleobases attached as side-chain-like groups. Therefore, PNA cannot be treated as just another RNA-like scaffold.
 
-### Prototype 008A.1 — failed RNA-fold-forced attempt
-
-The first PNA attempt tried:
-
-```text
-RNA fold → force PNA backbone onto it
-```
-
-The result was a tangled 8-mer and was archived as a failure benchmark.
-
-### Prototype 008B — successful template-primary PNA converter
-
-Prototype 008B reversed the logic:
-
-```text
-PNA scaffold first
-RNA sequence/base identity second
-```
-
-This produced clean sequence-preserving PNA-like candidates.
-
-Current status:
-
-```text
-008B is the best current practical PNA converter.
-```
-
-Important limitation:
-
-```text
-008B does not preserve RNA tertiary fold.
-```
-
-### Prototype 008C — sequence-primary PNA generator
-
-Prototype 008C generalizes PNA generation to:
-
-```bash
---rna input.pdb
---fasta input.fasta
---sequence CUAGGCUC
-```
-
-Current status:
-
-```text
-008C is useful for sequence-to-PNA candidate generation, but it is not a fold-preserving converter.
-```
-
-### Prototype 008D — hybrid RNA-informed boundary test
-
-Prototype 008D attempted:
-
-```text
-RNA base-frame guidance
-+
-PNA local scaffold
-+
-bounded C′(i)→N1′(i+1) smoothing
-```
-
-Current status:
-
-```text
-008D is an important partial/negative result. It partially preserves local organization but does not solve reliable RNA-fold-preserving PNA reconstruction.
-```
-
-Main PNA conclusion:
+Current PNA conclusion:
 
 ```text
 PNA is tameable as a sequence-carrier scaffold,
 but not yet tameable as an RNA-fold-preserving analog under the current prototype framework.
+```
+
+Recommended interpretation:
+
+```text
+008B = best current practical PNA converter
+008C = useful sequence-primary generator
+008D = boundary/partial result
 ```
 
 ---
@@ -364,137 +370,78 @@ Digital Polymerase keeps both successful and failed benchmarks. Failure cases ar
 | Benchmark | Focus | Result |
 |---|---|---|
 | `Benchmark 002` | HH ribozyme RNA → HNA early scaling failure | Productive failure; short-mer logic did not generalize directly |
-| `Benchmark 003` | ANA fragment-guided scaling | Revealed chain-continuity failure, then led to 002A.2 chain-preserving ANA |
+| `Benchmark 003` | ANA fragment-guided scaling | Revealed chain-continuity failure, then led to `002A.2` |
 | `Benchmark 004` | FANA chain-preserving scaling | Successful candidate generation from 8 nt to 111 nt |
 | `Benchmark 005` | HNA template regression | Successful HNA 8-mer full-template regression |
-| `Benchmark 006` | HNA scaling | Successful HNA-like candidate generation from 8 nt to 111 nt using 001C.1 |
-| `Benchmark 007` | HNA documentation/prototype consolidation | Prototype documentation and scaling interpretation |
-| `Benchmark 008` | CeNA candidate scaling | Successful first-pass candidate generation from 8 nt to 111 nt |
-| `Benchmark 009` | XyNA candidate scaling | Successful candidate generation from 8 nt to 111 nt |
+| `Benchmark 006` | HNA scaling/template regression | Successful HNA-like candidate generation using `001C.1` |
+| `Benchmark 007` | CeNA candidate scaling | Successful first-pass candidate generation from 8 nt to 111 nt |
+| `Benchmark 008` | XyNA candidate scaling | Successful candidate generation from 8 nt to 111 nt |
+| `Benchmark 009` | TNA candidate scaling | Successful linkage-remapped candidate generation from 8 nt to 111 nt |
 | `Benchmark 010` | GNA scaling | Successful first-pass glycerol-scaffold reconstruction up to 111 nt |
 | `Benchmark 011` | PNA failed RNA-fold-forced attempt | Productive failure; direct forcing caused tangling |
 | `Benchmark 012` | PNA template-primary scaling | Successful sequence-preserving PNA scaffold generation |
 | `Benchmark 013` | PNA sequence-primary regression/limitation | Useful generator; not fold-preserving |
 | `Benchmark 014` | PNA hybrid-guided boundary test | Partial/negative boundary result |
 
-Recommended benchmark folders:
+---
+
+## Current Benchmark Inputs
+
+Current scaling tests use short-to-medium RNA fragments and an HH-type I ribozyme-derived 111-mer:
 
 ```text
-benchmarks/
-├── hh_ribozyme_8t5o/
-├── ana_fragment_scaling/
-├── fana_fragment_scaling/
-├── hna_template_regression/
-├── hna_scaling/
-├── cena_scaling/
-├── xyna_scaling/
-├── tna_scaling/
-├── gna_scaling/
-└── pna_scaling/
+RNA-8mer
+RNA-12mer
+RNA-16mer
+RNA-22mer
+RNA-34mer
+HH-type I ribozyme-derived 111-mer
 ```
+
+Future benchmark expansion should prioritize **RNA structural motif diversity**, not just longer sequences.
+
+Recommended motif ladder:
+
+```text
+Stage 1: linear ssRNA / short stem / hairpin
+Stage 2: tetraloop / bulge / internal loop
+Stage 3: pseudoknot / three-way junction / kissing loop
+Stage 4: tRNA
+Stage 5: riboswitch aptamer
+Stage 6: compact ribozyme beyond hammerhead, e.g. twister or HDV
+Stage 7: 5S rRNA
+Stage 8: rRNA domain fragment
+Stage 9: full rRNA only as a long-term stress test
+```
+
+Full rRNA-level conversion should be treated as a computational scalability stress test, not as evidence of functional XNA ribosome-like behavior.
 
 ---
 
-## Suggested Repository Structure
+## Stable Converter Plan
+
+The `converters/` folder is reserved for stable or semi-stable converter modules. At the current stage, most scripts should remain in `prototypes/`.
+
+A prototype should only be promoted to `converters/` after it has:
+
+1. reusable CLI and/or Python API
+2. no hardcoded local paths
+3. standardized report format
+4. target-specific validation
+5. benchmark regression tests
+6. clear failure behavior
+7. documented limitations
+8. visual sanity on 8-mer and 34-mer benchmarks
+
+Recommended promotion order:
 
 ```text
-digital-polymerase/
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── assets/
-│   └── digital_polymerase_banner__v2.png
-│
-├── src/
-│   └── digital_polymerase/
-│       ├── core/
-│       │   └── README.md
-│       ├── converters/
-│       │   └── README.md
-│       └── prototypes/
-│           ├── rna_to_hna_template_guided.py
-│           ├── rna_to_hna_chain_preserving.py
-│           ├── rna_to_ana_fragment_guided.py
-│           ├── rna_to_fana_fragment_guided.py
-│           ├── rna_to_cena_template_guided.py
-│           ├── rna_to_xyna_template_guided.py
-│           ├── rna_to_tna_linkage_remapped.py
-│           ├── rna_to_gna_linkage_optimized.py
-│           ├── rna_to_pna_template_primary.py
-│           ├── pna_sequence_primary_generator.py
-│           └── rna_to_pna_hybrid_guided.py
-│
-├── docs/
-│   ├── prompt_protocol.md
-│   ├── prototype_001B_rna_to_hna_template_guided.md
-│   ├── prototype_001C_rna_to_hna_chain_preserving.md
-│   ├── prototype_002A_rna_to_ana_fragment_guided.md
-│   ├── prototype_003A_rna_to_fana_fragment_guided.md
-│   ├── prototype_004A_rna_to_cena_template_guided.md
-│   ├── prototype_005A_rna_to_xyna_template_guided.md
-│   ├── prototype_006B_rna_to_tna_linkage_remapped.md
-│   ├── prototype_007A_rna_to_gna_linkage_optimized.md
-│   ├── prototype_008B_rna_to_pna_template_primary.md
-│   ├── prototype_008D_rna_to_pna_hybrid_guided_plan.md
-│   └── pna_arc_summary_008A1_to_008D.md
-│
-├── examples/
-│   ├── rna_to_hna_8mer/
-│   ├── rna_to_pna_8mer/
-│   └── sequence_to_pna/
-│
-└── benchmarks/
-    ├── hh_ribozyme_8t5o/
-    ├── ana_fragment_scaling/
-    ├── fana_fragment_scaling/
-    ├── hna_template_regression/
-    ├── hna_scaling/
-    ├── cena_scaling/
-    ├── xyna_scaling/
-    ├── tna_scaling/
-    ├── gna_scaling/
-    └── pna_scaling/
+v0.1 stable candidate: RNA → FANA
+v0.2 stable candidates: RNA → ANA, RNA → HNA
+v0.3 stable candidates: RNA → XyNA, RNA → CeNA
+v0.4 experimental-stable candidates: RNA → TNA, RNA → GNA
+PNA: separate special module for template-primary and sequence-primary generation
 ```
-
----
-
-## Related Tools and Inspirations
-
-Digital Polymerase is inspired by existing nucleic acid and XNA modeling tools, but it is not intended to duplicate them.
-
-At present, there is no widely established one-click tool that takes an arbitrary DNA/RNA PDB structure and directly converts it into a chemically validated XNA PDB structure. Existing tools instead focus on related tasks such as building XNA duplexes, modeling nucleic acid analogs, analyzing or rebuilding nucleic acid structures, or preparing modified nucleotides for molecular dynamics.
-
-Relevant inspirations include:
-
-### Ducque
-
-**Ducque** is an open-source XNA builder designed for constructing nucleic acid analog duplexes with customizable chemistry. It has been demonstrated in a molecular modeling pipeline for morpholino nucleic acid/RNA duplexes and is especially relevant to XNA-native structure generation [1].
-
-Digital Polymerase is inspired by Ducque’s XNA-native philosophy, especially its focus on customizable nucleic acid analog chemistry.
-
-### proto-Nucleic Acid Builder (pNAB)
-
-**pNAB** is an open-source tool for modeling nucleic acid analogs with alternative backbones and nucleobases. It performs conformational searches to generate candidate structures and was developed to support exploration of XNAs and possible pre-RNA genetic polymers [2].
-
-Digital Polymerase is inspired by pNAB’s general framework for exploring alternative nucleic acid architectures.
-
-### modXNA
-
-**modXNA** is a modular tool for deriving and building modified nucleotides for use with Amber force fields. It is especially relevant for molecular dynamics simulations of noncanonical or modified nucleic acid systems [3].
-
-Digital Polymerase is not currently a force-field parameterization tool, but future workflows may benefit from compatibility with parameterization approaches such as modXNA.
-
-### 3DNA / X3DNA-DSSR
-
-**3DNA** provides tools for the analysis, reconstruction, and visualization of three-dimensional DNA and RNA structures from coordinate files [4]. **DSSR** extends this structural-analysis tradition by dissecting and annotating RNA tertiary structures, including canonical and noncanonical base pairs [5].
-
-Digital Polymerase is inspired by the nucleic-acid structural analysis and rebuilding tradition represented by these tools, while extending the question toward XNA-aware reconstruction.
-
-### NAB / AmberTools
-
-**NAB** is a nucleic acid modeling language originally developed for building unusual nucleic acid structures using rigid-body transformations, distance geometry, and molecular mechanics refinement [6].
-
-Digital Polymerase is inspired by this tradition of programmatic nucleic acid construction, but aims to focus specifically on template-guided and chain-aware NA→XNA reconstruction.
 
 ---
 
@@ -511,12 +458,14 @@ Digital Polymerase is inspired by this tradition of programmatic nucleic acid co
 - Validate local scaffold geometry
 - Audit expected base atoms and carbonyl/oxygen atoms
 - Export reconstructed structures as **PDB**
-- Generate Markdown reports describing method, validation, and limitations
+- Generate Markdown and JSON reports describing method, validation, and limitations
 
 ### Canonical nucleic acid conversion
 
 - DNA → RNA
 - RNA → DNA
+
+These are planned future controls. The current milestone focuses on single-stranded RNA-derived XNA candidate reconstruction because ssRNA-like molecules provide a richer functional landscape for ribozymes, aptamers, and structured catalytic polymers.
 
 ### Extended XNA conversion
 
@@ -582,38 +531,23 @@ A converted model should be interpreted as a **computationally generated candida
 
 ---
 
-## Scope
-
-This repository is intended as a **dry-lab computational tool**, not as a replacement for experimental validation.
-
-Its long-term purpose is to help researchers explore possible structural scenarios in which functional XNA molecules may exist, interact, or be compared with canonical nucleic acids.
-
-Digital Polymerase is especially intended for exploratory work in:
-
-- xenobiology
-- synthetic biology
-- computational structural biology
-- nucleic acid engineering
-- alternative genetic polymers
-- origins-of-life and astrobiology-inspired molecular systems
-
----
-
 ## Development Roadmap
 
-Near-term development priorities include:
+Near-term development priorities:
 
-1. Refactor shared parser, residue, alignment, validation, and report logic into `core/`
-2. Standardize prototype CLI behavior and report format
-3. Preserve prototype scripts under `prototypes/` until they pass stronger validation
-4. Add topology/connectivity support, including possible `CONECT` output
-5. Add stronger stereochemistry, chirality, torsion, and clash validation
-6. Add expected-base-atom and carbonyl/base-oxygen audits
-7. Add residue naming dictionaries for target XNAs
-8. Explore compatibility with minimization and force-field parameter workflows
-9. Develop a generalized NA → XNA conversion framework
-10. Build a template registry for XNA structural donors
-11. Revisit morpholino NA / PMO when better structural templates are available
+1. Keep all current prototypes archived under `prototypes/`
+2. Expand tests for `core/`
+3. Refactor shared parser, residue, alignment, validation, and report logic into core-driven workflows
+4. Refactor RNA → FANA as the first stable converter candidate
+5. Add benchmark regression tests for FANA
+6. Standardize prototype CLI behavior and report format
+7. Add topology/connectivity support, including possible `CONECT` output
+8. Add stronger stereochemistry, chirality, torsion, and clash validation
+9. Add expected-base-atom and carbonyl/base-oxygen audits
+10. Add residue naming dictionaries for target XNAs
+11. Explore compatibility with minimization and force-field parameter workflows
+12. Build a template registry for XNA structural donors
+13. Revisit morpholino NA / PMO when better structural templates are available
 
 ---
 
@@ -656,6 +590,7 @@ Achieved targets include:
 - Scaling tests from 8-mer inputs to an HH-type I ribozyme-derived 111-mer input
 - Markdown reports with chain-continuity, target-linkage, base-attachment, and local scaffold validation
 - Visual inspection using PyMOL and Discovery Studio
+- Initial reusable `core/` package
 
 The 2026 goal is not to claim full physical or biological validity, but to establish a working computational foundation for **nucleic-acid-to-XNA candidate reconstruction** and to clearly map where current geometry-transfer logic succeeds or fails.
 
@@ -683,6 +618,46 @@ Most sugar/phosphate-like XNA outputs are visually coherent and pass current int
 PNA is treated separately because it is a pseudopeptide nucleic acid. Current PNA support is strongest for **template-primary scaffold-first sequence-carrier generation**, while reliable **RNA-fold-preserving PNA reconstruction** remains unsolved under the current prototype framework.
 
 The next major development stage is modularization, stronger chemical validation, topology/connectivity support, force-field/minimization compatibility, and careful separation between fold-preserving conversion and sequence-carrier generation.
+
+---
+
+## Related Tools and Inspirations
+
+Digital Polymerase is inspired by existing nucleic acid and XNA modeling tools, but it is not intended to duplicate them.
+
+At present, there is no widely established one-click tool that takes an arbitrary DNA/RNA PDB structure and directly converts it into a chemically validated XNA PDB structure. Existing tools instead focus on related tasks such as building XNA duplexes, modeling nucleic acid analogs, analyzing or rebuilding nucleic acid structures, or preparing modified nucleotides for molecular dynamics.
+
+Relevant inspirations include:
+
+### Ducque
+
+**Ducque** is an open-source XNA builder designed for constructing nucleic acid analog duplexes with customizable chemistry. It has been demonstrated in a molecular modeling pipeline for morpholino nucleic acid/RNA duplexes and is especially relevant to XNA-native structure generation [1].
+
+Digital Polymerase is inspired by Ducque’s XNA-native philosophy, especially its focus on customizable nucleic acid analog chemistry.
+
+### proto-Nucleic Acid Builder (pNAB)
+
+**pNAB** is an open-source tool for modeling nucleic acid analogs with alternative backbones and nucleobases. It performs conformational searches to generate candidate structures and was developed to support exploration of XNAs and possible pre-RNA genetic polymers [2].
+
+Digital Polymerase is inspired by pNAB’s general framework for exploring alternative nucleic acid architectures.
+
+### modXNA
+
+**modXNA** is a modular tool for deriving and building modified nucleotides for use with Amber force fields. It is especially relevant for molecular dynamics simulations of noncanonical or modified nucleic acid systems [3].
+
+Digital Polymerase is not currently a force-field parameterization tool, but future workflows may benefit from compatibility with parameterization approaches such as modXNA.
+
+### 3DNA / X3DNA-DSSR
+
+**3DNA** provides tools for the analysis, reconstruction, and visualization of three-dimensional DNA and RNA structures from coordinate files [4]. **DSSR** extends this structural-analysis tradition by dissecting and annotating RNA tertiary structures, including canonical and noncanonical base pairs [5].
+
+Digital Polymerase is inspired by the nucleic-acid structural analysis and rebuilding tradition represented by these tools, while extending the question toward XNA-aware reconstruction.
+
+### NAB / AmberTools
+
+**NAB** is a nucleic acid modeling language originally developed for building unusual nucleic acid structures using rigid-body transformations, distance geometry, and molecular mechanics refinement [6].
+
+Digital Polymerase is inspired by this tradition of programmatic nucleic acid construction, but aims to focus specifically on template-guided and chain-aware NA→XNA reconstruction.
 
 ---
 
