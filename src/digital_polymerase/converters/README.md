@@ -1,255 +1,103 @@
 # Digital Polymerase Converters
 
-This directory is reserved for **stable or semi-stable converter modules** in Digital Polymerase.
+`converters/` is the semi-stable user-facing layer of Digital Polymerase.
 
-At the current development stage, most RNA → XNA scripts should remain in:
+This folder should contain cleaner converter wrappers that call the reusable
+`digital_polymerase.core` engine.
 
-```text
-src/digital_polymerase/prototypes/
-```
-
-until they have passed basic validation, documentation, and reproducibility checks.
-
----
-
-## Purpose
-
-The `converters/` directory will eventually contain reusable conversion modules for transforming nucleic acid structures between canonical nucleic acids and XNA-like chemistries.
-
-Examples of future supported directions include:
+## Relationship between folders
 
 ```text
-RNA → HNA
-RNA → ANA
-RNA → FANA
-RNA → TNA
-RNA → CeNA
-RNA → GNA
-DNA/RNA → XNA
-XNA → XNA
+prototypes/  = experimental battlefield scripts
+core/        = reusable engine components
+converters/  = stable or semi-stable user-facing wrappers
 ```
 
-A file should only be promoted here when it is no longer just a one-off prototype.
+Prototype scripts should **not** be deleted after promotion. They remain useful
+as historical benchmarks, failure records, and regression references.
 
----
+## Current status
 
-## Current Policy
-
-Prototype scripts should **not** be placed here yet if they are:
-
-- experimental
-- chemically incomplete
-- missing validation reports
-- hardcoded for a single example
-- not chain-aware
-- not tested on multiple inputs
-- not documented with limitations
-
-For example, the following currently belong under `prototypes/`:
-
-```text
-src/digital_polymerase/prototypes/rna_to_hna_template_based.py
-src/digital_polymerase/prototypes/rna_to_ana_fragment_guided.py
-```
-
----
-
-## Promotion Criteria
-
-A prototype can be promoted into `converters/` when it satisfies most of the following:
-
-### 1. Reusable interface
-
-The script or module should support command-line arguments or callable functions.
-
-Minimum CLI requirements:
-
-```text
---source / --rna
---template
---output
---report
---base-policy
-```
-
-### 2. No hardcoded paths
-
-The converter should not depend on local machine paths, temporary upload folders, or project-specific absolute paths.
-
-### 3. Explicit method classification
-
-The converter should clearly state whether it performs:
-
-```text
-symbolic conversion
-topological conversion
-template-guided reconstruction
-fragment-guided reconstruction
-chain-aware reconstruction
-```
-
-### 4. Scientific warning
-
-Outputs must clearly state that generated structures are computational candidates unless physically validated.
-
-Recommended warning:
-
-```text
-This output is a computational candidate structure.
-It is not energy-minimized, force-field-validated, experimentally verified, or proof of biological function.
-```
-
-### 5. Validation metrics
-
-At minimum, reports should include:
-
-- converted residue count
-- source sequence
-- template usage
-- local alignment RMSD
-- missing atoms
-- residue completeness
-- inter-residue chain-continuity checks
-- warnings and limitations
-
-### 6. Chain-continuity awareness
-
-For polymeric structures, the converter should check relevant inter-residue connectivity, such as:
-
-```text
-O3′(i) → P(i+1)
-P(i) → O5′(i)
-```
-
-Residue-local alignment alone is not sufficient.
-
-### 7. Documentation
-
-Each converter should have corresponding documentation in:
-
-```text
-docs/
-examples/
-benchmarks/
-```
-
----
-
-## Planned Converter Families
-
-### Full-template reconstruction
-
-Used when source and target structures have comparable residue count and geometry.
-
-Example:
-
-```text
-RNA 8-mer + HNA 8-mer template → HNA-like candidate 8-mer
-```
-
-This is represented by Prototype 001.
-
-### Fragment-guided reconstruction
-
-Used when the available XNA template is shorter than the source structure.
-
-Example:
-
-```text
-RNA 8-mer / 12-mer / 34-mer + ANA 4-mer template → ANA-like candidate
-```
-
-This is represented by Prototype 002A.
-
-### Chain-aware fragment reconstruction
-
-Future method.
-
-Instead of transforming residues independently, the converter should preserve or reconstruct inter-residue connectivity using connected fragments and/or overlapping windows.
-
-### De novo / idealized XNA building
-
-Future method.
-
-This would build XNA structures from sequence and polymer definitions rather than from full experimental templates.
-
-This is not yet implemented.
-
----
-
-## Suggested Future Layout
+The converter layer has only the first shared interface skeleton:
 
 ```text
 converters/
 ├── README.md
-├── base.py
-├── template_guided.py
-├── fragment_guided.py
-├── chain_validator.py
-├── rna_to_hna.py
-├── rna_to_ana.py
-└── registry.py
+├── __init__.py
+└── base.py
 ```
 
----
+No full target converter has been promoted yet.
 
-## Relationship to Prototypes
+## First planned stable converter
 
-`prototypes/` is where exploratory scripts live.
-
-`converters/` is where reusable converter logic should live.
-
-The recommended flow is:
+Recommended first stable converter:
 
 ```text
-prototype script
-↓
-documented benchmark
-↓
-validation metrics
-↓
-refactor shared logic into core/
-↓
-promote stable logic into converters/
+RNA → FANA
 ```
 
----
+Why FANA first?
 
-## Current Status
+- It is chain-preserving.
+- It has a clear local target marker: `C2′→F2′`.
+- It has already been benchmarked from 8 nt to 111 nt.
+- It is less structurally unusual than TNA, GNA, or PNA.
+- It is a good pilot for refactoring prototype logic into the shared core engine.
 
-No converter in this directory should be considered production-ready yet.
-
-Digital Polymerase is currently building and testing the foundation through:
+Expected future file:
 
 ```text
-Prototype 001: RNA → HNA template-guided reconstruction
-Benchmark 002: HH ribozyme RNA → HNA failure / stress-test benchmark
-Prototype 002A: RNA → ANA fragment-guided reconstruction
-Benchmark 003: ANA fragment-guided scaling benchmark
+converters/rna_to_fana.py
 ```
 
-The next major requirement before promotion is:
+Expected future public function:
+
+```python
+convert_rna_to_fana(
+    input_pdb,
+    template_pdb,
+    output_pdb,
+    report_md,
+    metrics_json=None,
+)
+```
+
+## Promotion criteria
+
+A prototype should only move into `converters/` after it has:
+
+1. explicit input/output paths
+2. no hardcoded local paths
+3. standardized CLI and/or Python API
+4. standardized PDB, Markdown report, and optional JSON metrics outputs
+5. target-specific validation through `core.validation`
+6. registry-aware target grammar through `core.registry`
+7. clear failure behavior
+8. benchmark regression tests
+9. documented limitations
+10. visual sanity on 8-mer and 34-mer benchmarks
+
+## Recommended promotion order
 
 ```text
-chain-continuity validation
+v0.1 candidate: RNA → FANA
+v0.2 candidates: RNA → ANA, RNA → HNA
+v0.3 candidates: RNA → XyNA, RNA → CeNA
+v0.4 experimental-stable candidates: RNA → TNA, RNA → GNA
+PNA: separate special module for template-primary and sequence-primary generation
 ```
 
----
+## Design principle
 
-## Development Reminder
+A converter should not merely write a PDB.
 
-Do not promote a converter only because it produces a PDB.
-
-A Digital Polymerase converter should produce:
+It should:
 
 ```text
-candidate structure
-+
-transparent method description
-+
-validation metrics
-+
-explicit limitations
+parse → reconstruct → validate → report → fail clearly when needed
 ```
 
-Scientific honesty is part of the tool.
+All outputs remain computational candidate structures unless validated by
+downstream stereochemical inspection, minimization, molecular dynamics, force
+field/topology checks, and expert chemical review.
