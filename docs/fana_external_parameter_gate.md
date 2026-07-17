@@ -79,6 +79,10 @@ A passing preflight writes:
 No `tleap`, `sander`, or `ambpdb` process is launched. Their absence is reported
 as a warning because preparation remains portable without AmberTools.
 
+For the candidate-bound 8-mer campaign initializer and the post-minimization
+structural audit, continue with
+[`fana_controlled_minimization.md`](fana_controlled_minimization.md).
+
 ## Scientific boundary
 
 The gate verifies consistency and provenance claims. It cannot establish that
