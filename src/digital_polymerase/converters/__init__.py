@@ -2,22 +2,14 @@
 
 The converter layer is intentionally conservative.
 
-Current status:
-    The project is only beginning to promote prototype logic into stable
-    converter wrappers. Most reconstruction scripts should remain in
-    ``digital_polymerase.prototypes`` until they pass regression tests and
-    standardized reporting.
+Current stable candidate:
+    RNA → FANA, promoted from Prototype 003A after chain-preserving benchmarks
+    from 8 nt to 111 nt.
 
-Recommended first stable candidate:
-    RNA → FANA, because it is chain-preserving, benchmarked from 8 nt to
-    111 nt, and has a clear target-specific local geometry marker
-    (C2′→F2′).
-
-Future imports may look like:
+Public import:
 
     from digital_polymerase.converters.rna_to_fana import convert_rna_to_fana
 
-For now, this package exposes shared converter dataclasses only.
 """
 
 from .base import (
@@ -28,6 +20,7 @@ from .base import (
     ensure_output_dirs,
     summarize_result,
 )
+from .rna_to_fana import FANAResidueRecord, convert_rna_to_fana
 
 __all__ = [
     "ConversionResult",
@@ -36,4 +29,6 @@ __all__ = [
     "ConverterStatus",
     "ensure_output_dirs",
     "summarize_result",
+    "FANAResidueRecord",
+    "convert_rna_to_fana",
 ]
