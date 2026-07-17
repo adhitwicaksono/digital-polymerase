@@ -49,6 +49,7 @@ from digital_polymerase.core.residues import base_of, glycosidic_atom
 SCHEMA_VERSION = "0.1"
 TARGET = "FANA"
 RING_ATOMS = ("O4'", "C1'", "C2'", "C3'", "C4'")
+FIVE_PRIME_PHOSPHATE_ATOMS = frozenset({"P", "OP1", "OP2"})
 
 
 @dataclass(frozen=True)
@@ -471,6 +472,9 @@ def audit_fana_physical_readiness(
                 "does not map to canonical A/U/G/C FANA chemistry."
             )
 
+    segments = _consecutive_segments(keys)
+    five_prime_keys = {segment[0] for segment in segments}
+
     template_references = _template_references(template)
     bonds: list[CovalentBond] = []
     distances: list[float] = []
@@ -480,7 +484,15 @@ def audit_fana_physical_readiness(
     for key in keys:
         residue = structure[key]
         base = base_of(residue_name(residue))
+        neutral_five_prime = (
+            key in five_prime_keys
+            and not FIVE_PRIME_PHOSPHATE_ATOMS.intersection(residue)
+        )
         for rule in BACKBONE_RULES:
+            if neutral_five_prime and FIVE_PRIME_PHOSPHATE_ATOMS.intersection(
+                (rule.left, rule.right)
+            ):
+                continue
             _add_bond_observation(
                 structure=structure,
                 left_key=key,
@@ -527,7 +539,6 @@ def audit_fana_physical_readiness(
                 failures=distance_failures,
             )
 
-    segments = _consecutive_segments(keys)
     for segment in segments:
         for left_key, right_key in zip(segment, segment[1:]):
             _add_bond_observation(
