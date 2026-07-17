@@ -1,2 +1,2 @@
 """Digital Polymerase: dry-lab nucleic-acid/XNA candidate reconstruction."""
-__version__ = "0.1.3"
+__version__ = "0.1.4"
