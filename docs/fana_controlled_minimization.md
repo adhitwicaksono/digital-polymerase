@@ -4,6 +4,12 @@ Digital Polymerase v0.1.3 adds reproducible campaign initialization and a
 post-run audit for the first controlled FANA minimization. It still does not
 ship force-field parameters or execute Amber.
 
+Digital Polymerase v0.1.4 adds an explicit terminal atom-normalization contract.
+An approved neutral 5′-OH template may remove the source candidate's terminal
+`P`, `OP1`, and `OP2` atoms before LEaP. The same declaration is honored by
+bundle preparation and the post-minimization structural audit; hand-editing the
+prepared candidate is neither required nor allowed by the reproducible route.
+
 ## Current status
 
 The software path is ready, but the physical campaign remains
@@ -39,7 +45,7 @@ It does not uniquely determine the remaining parameterization:
 | C base | `DCC` or `RCC` | Must match the selected force-field family. |
 | G base | `DGG` or `RGG` | Must match the selected force-field family. |
 | U base | catalog exposes `RUU` | Compatibility must be reviewed; thymine must not be silently substituted. |
-| Termini | external templates required | modXNA does not generate 5′ or 3′ terminal residues. |
+| Termini | `--5cap` / `--3cap` libraries | The chemistry, residue names, and any source-atom normalization must be declared and reviewed. |
 
 The generated `modxna_fragment_decisions.tsv` leaves those choices explicitly
 unresolved. A reviewer must document one compatible route before running
@@ -54,6 +60,12 @@ modXNA input uses one line per residue chemistry:
 The tool requires AmberTools and current CPPTRAJ. It generates a random
 three-character residue name; that name must match the PDB and parameter
 manifest mapping.
+
+For the controlled `CUAGGCUC` campaign, the reviewed neutral 5′-OH route uses a
+`CF5` library generated from `5PO A5L RCC --5cap`. Its terminal declaration must
+include `"remove_atoms": ["P", "OP1", "OP2"]`. The 3′-OH `CF3` library uses
+`RPO A5L RCC --3cap` and declares an empty removal list. Digital Polymerase
+rejects other terminal atom removals.
 
 ## Parameter preparation
 
@@ -96,7 +108,8 @@ The audit:
 2. identifies FANA residues by the approved internal and terminal names while
    excluding solvent and ions;
 3. restores the original FANA residue identities and residue numbering;
-4. requires every original candidate atom to remain present;
+4. requires every comparison atom to remain present after applying the same
+   approved terminal normalization used during preparation;
 5. parses finite `FINAL RESULTS` rows from both Amber stages and blocks NaN,
    fatal, explicit error, or abnormal-termination markers;
 6. computes aligned heavy-atom RMSD and maximum displacement;

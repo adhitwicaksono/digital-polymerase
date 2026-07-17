@@ -51,7 +51,7 @@ validation error. Use `--overwrite` only after inspecting the destination.
 | Parent force field | Name, version, and LEaP source file |
 | Parameter generator | Tool name, version, command provenance, and base-specific fragments; modXNA routes must declare `A5L` as the FANA sugar/linker fragment |
 | Residue mappings | One unique 1–3 character Amber residue name for every observed internal chemistry and exact input atom-name inventories |
-| Termini | Explicit 5′ and 3′ chemistry and residue-library names for every chain segment |
+| Termini | Explicit 5′ and 3′ chemistry, residue-library names, and reviewed source-atom removals for every chain segment |
 | Artifacts | Relative paths, roles, and exact SHA-256 hashes for at least one `frcmod` and one residue-library artifact |
 | Coverage | Explicit confirmation of atom names, atom types, charges, bonds, angles, dihedrals, impropers, and nonbonded terms |
 | Charges | Charge method, quantum method, integer expected total charge, and validation confirmation |
@@ -62,12 +62,20 @@ Artifact hashes are recalculated. Paths that escape the manifest directory,
 unsafe LEaP filenames, missing residue names, unresolved terminal states, and
 incomplete declarations block bundle generation.
 
+The v0.1.4 manifest contract accepts an additive `remove_atoms` list on each terminal
+declaration. The only supported normalization is removal of `P`, `OP1`, and
+`OP2` from the first source residue when using a neutral 5′-OH library; the
+3′ declaration cannot remove source atoms. Every named atom must exist at the
+declared terminus. The preparer applies the operation before writing
+`candidate_amber_names.pdb`, and the post-run audit uses the same normalized
+comparison inventory.
+
 ## Prepared bundle
 
 A passing preflight writes:
 
 - a candidate PDB renamed to the approved internal and terminal Amber residue
-  names;
+  names, with approved terminal atom normalization applied;
 - copies of the hash-validated parameter files;
 - `tleap.in` for loading parameters, checking the unit, solvating with OPC,
   neutralizing, and writing topology/coordinates;
