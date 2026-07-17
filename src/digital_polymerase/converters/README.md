@@ -18,20 +18,21 @@ as historical benchmarks, failure records, and regression references.
 
 ## Current status
 
-The converter layer has only the first shared interface skeleton:
+The converter layer now contains the first promoted stable candidate:
 
 ```text
 converters/
 ├── README.md
 ├── __init__.py
-└── base.py
+├── base.py
+└── rna_to_fana.py
 ```
 
-No full target converter has been promoted yet.
+`rna_to_fana.py` promotes Prototype 003A into a reusable Python API and CLI.
 
-## First planned stable converter
+## First stable-candidate converter
 
-Recommended first stable converter:
+First stable-candidate converter:
 
 ```text
 RNA → FANA
@@ -45,13 +46,13 @@ Why FANA first?
 - It is less structurally unusual than TNA, GNA, or PNA.
 - It is a good pilot for refactoring prototype logic into the shared core engine.
 
-Expected future file:
+Module:
 
 ```text
 converters/rna_to_fana.py
 ```
 
-Expected future public function:
+Public function:
 
 ```python
 convert_rna_to_fana(
@@ -61,6 +62,18 @@ convert_rna_to_fana(
     report_md,
     metrics_json=None,
 )
+```
+
+CLI:
+
+```bash
+digital-polymerase-fana \
+  --rna input_rna.pdb \
+  --template fana_template.pdb \
+  --output candidate_fana.pdb \
+  --report conversion_report.md \
+  --metrics validation.json \
+  --strict
 ```
 
 ## Promotion criteria
