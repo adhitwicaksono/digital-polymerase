@@ -116,6 +116,12 @@ An external parameterization workflow must select and validate:
 5. charges, atom types, and all missing parameters; and
 6. minimization and MD protocols with appropriate controls.
 
+Digital Polymerase v0.1.2 turns those requirements into a candidate-bound,
+hash-validated manifest contract and can prepare an unexecuted Amber input
+bundle after the contract passes. See
+[`fana_external_parameter_gate.md`](fana_external_parameter_gate.md). The
+external gate does not provide parameters or replace scientific review.
+
 ## Primary references
 
 - Love O. et al. *modXNA: A Modular Approach to Parametrization of Modified
