@@ -57,6 +57,11 @@ ALLOWED_ARTIFACT_ROLES = {
     "additional_leap_parameters",
 }
 
+ALLOWED_TERMINAL_REMOVALS = {
+    "five_prime": frozenset({"P", "OP1", "OP2"}),
+    "three_prime": frozenset(),
+}
+
 PRIMARY_REFERENCES = (
     "https://doi.org/10.1021/acs.jctc.4c01164",
     "https://doi.org/10.33011/livecoms.6.1.4545",
@@ -72,6 +77,14 @@ class ValidatedArtifact:
     bundle_name: str
     sha256: str
     size_bytes: int
+
+
+@dataclass(frozen=True)
+class ResolvedTerminalState:
+    """Amber terminal template plus atoms removed from the source candidate."""
+
+    residue_name: str
+    remove_atoms: tuple[str, ...]
 
 
 @dataclass
@@ -209,11 +222,13 @@ def initialize_fana_parameter_manifest(
                 "five_prime": {
                     "chemistry": UNRESOLVED,
                     "residue_name": UNRESOLVED,
+                    "remove_atoms": [],
                     "resolved": False,
                 },
                 "three_prime": {
                     "chemistry": UNRESOLVED,
                     "residue_name": UNRESOLVED,
+                    "remove_atoms": [],
                     "resolved": False,
                 },
             }
@@ -393,12 +408,13 @@ def _validate_residue_mappings(
 
 def _validate_terminal_states(
     *,
+    structure: Structure,
     parameterization: Mapping[str, Any],
     segments: Sequence[Sequence[ResidueKey]],
     issues: list[str],
-) -> dict[tuple[str, str], dict[str, str]]:
+) -> dict[tuple[str, str], dict[str, ResolvedTerminalState]]:
     states = parameterization.get("terminal_states")
-    resolved: dict[tuple[str, str], dict[str, str]] = {}
+    resolved: dict[tuple[str, str], dict[str, ResolvedTerminalState]] = {}
     if not isinstance(states, list):
         issues.append("parameterization.terminal_states must be a list.")
         return resolved
@@ -414,7 +430,7 @@ def _validate_terminal_states(
         if pair in resolved:
             issues.append(f"Duplicate terminal state for segment {pair[0]}–{pair[1]}.")
             continue
-        terminal_names: dict[str, str] = {}
+        terminal_names: dict[str, ResolvedTerminalState] = {}
         for end in ("five_prime", "three_prime"):
             value = item.get(end)
             if not isinstance(value, dict):
@@ -438,8 +454,62 @@ def _validate_terminal_states(
                 issues.append(
                     f"Terminal state {pair[0]}–{pair[1]} {end} residue_name is invalid."
                 )
-            else:
-                terminal_names[end] = str(residue_code)
+                continue
+            remove_atoms = value.get("remove_atoms", [])
+            if not isinstance(remove_atoms, list) or not all(
+                isinstance(atom_name, str) and atom_name.strip()
+                for atom_name in remove_atoms
+            ):
+                issues.append(
+                    f"Terminal state {pair[0]}–{pair[1]} {end} remove_atoms "
+                    "must be a string list."
+                )
+                continue
+            if len(set(remove_atoms)) != len(remove_atoms):
+                issues.append(
+                    f"Terminal state {pair[0]}–{pair[1]} {end} remove_atoms "
+                    "contains duplicates."
+                )
+                continue
+            unsupported = sorted(set(remove_atoms) - ALLOWED_TERMINAL_REMOVALS[end])
+            if unsupported:
+                issues.append(
+                    f"Terminal state {pair[0]}–{pair[1]} {end} cannot remove: "
+                    + ", ".join(unsupported)
+                )
+                continue
+            if (
+                end == "five_prime"
+                and remove_atoms
+                and set(remove_atoms) != ALLOWED_TERMINAL_REMOVALS[end]
+            ):
+                issues.append(
+                    f"Terminal state {pair[0]}–{pair[1]} five_prime must remove "
+                    "P, OP1, and OP2 together."
+                )
+                continue
+            if pair in expected:
+                segment = next(
+                    candidate_segment
+                    for candidate_segment in segments
+                    if (
+                        _residue_label(candidate_segment[0]),
+                        _residue_label(candidate_segment[-1]),
+                    )
+                    == pair
+                )
+                terminal_key = segment[0] if end == "five_prime" else segment[-1]
+                absent = sorted(set(remove_atoms) - set(structure[terminal_key]))
+                if absent:
+                    issues.append(
+                        f"Terminal state {pair[0]}–{pair[1]} {end} remove_atoms "
+                        "are absent from the candidate: " + ", ".join(absent)
+                    )
+                    continue
+            terminal_names[end] = ResolvedTerminalState(
+                residue_name=str(residue_code),
+                remove_atoms=tuple(remove_atoms),
+            )
         resolved[pair] = terminal_names
     found = set(resolved)
     for pair in sorted(expected - found):
@@ -748,11 +818,11 @@ def _rename_candidate(
     *,
     structure: Structure,
     internal_mappings: Mapping[str, str],
-    terminal_states: Mapping[tuple[str, str], Mapping[str, str]],
+    terminal_states: Mapping[tuple[str, str], Mapping[str, ResolvedTerminalState]],
 ) -> Structure:
     renamed: Structure = {}
     segments = _consecutive_segments(sort_residue_keys(structure))
-    terminal_by_key: dict[ResidueKey, str] = {}
+    terminal_by_key: dict[ResidueKey, ResolvedTerminalState] = {}
     for segment in segments:
         pair = (_residue_label(segment[0]), _residue_label(segment[-1]))
         state = terminal_states[pair]
@@ -765,10 +835,17 @@ def _rename_candidate(
         terminal_by_key[segment[-1]] = state["three_prime"]
     for key in sort_residue_keys(structure):
         source_name = residue_name(structure[key])
-        target_name = terminal_by_key.get(key, internal_mappings[source_name])
+        terminal = terminal_by_key.get(key)
+        target_name = (
+            terminal.residue_name
+            if terminal is not None
+            else internal_mappings[source_name]
+        )
+        remove_atoms = set(terminal.remove_atoms) if terminal is not None else set()
         renamed[key] = {
             atom_name: clone_atom(atom, res_name=target_name)
             for atom_name, atom in structure[key].items()
+            if atom_name not in remove_atoms
         }
     return renamed
 
@@ -791,7 +868,7 @@ def _write_minimization_bundle(
     structure: Structure,
     parameterization: Mapping[str, Any],
     internal_mappings: Mapping[str, str],
-    terminal_states: Mapping[tuple[str, str], Mapping[str, str]],
+    terminal_states: Mapping[tuple[str, str], Mapping[str, ResolvedTerminalState]],
     artifacts: Sequence[ValidatedArtifact],
     candidate_path: Path,
     parameter_manifest_path: Path,
@@ -1044,6 +1121,7 @@ def prepare_fana_amber_minimization(
         issues=issues,
     )
     terminal_states = _validate_terminal_states(
+        structure=structure,
         parameterization=parameterization,
         segments=segments,
         issues=issues,
@@ -1055,7 +1133,9 @@ def prepare_fana_amber_minimization(
     )
     required_library_names = set(internal_mappings.values())
     for value in terminal_states.values():
-        required_library_names.update(value.values())
+        required_library_names.update(
+            terminal.residue_name for terminal in value.values()
+        )
     _validate_library_names(
         artifacts=artifacts,
         required_names=required_library_names,
