@@ -19,8 +19,8 @@ Digital Polymerase currently has:
 - reusable `core/` modules for atoms, residues, PDB I/O, geometry, template handling, target registry, validation, reporting, and custom errors
 - prototype RNA → XNA candidate generators for **HNA, ANA, FANA, CeNA, XyNA, TNA, GNA, and PNA**
 - benchmark folders containing inputs, templates, outputs, reports, screenshots, and failure notes
-- a reserved `converters/` folder for future stable or semi-stable converter modules
-- smoke tests for the first core package
+- a first stable-candidate RNA → FANA converter with Python API and CLI
+- core smoke tests and FANA regression tests at 8, 34, and 111 nt
 
 The project is currently transitioning from:
 
@@ -191,7 +191,8 @@ digital-polymerase/
 │   └── pna_scaling/
 │
 └── tests/
-    └── test_core_smoke.py
+    ├── test_core_smoke.py
+    └── test_rna_to_fana.py
 ```
 
 ---
@@ -303,7 +304,9 @@ Current status:
 RNA → FANA candidate generation works from 8 nt to 111 nt.
 ```
 
-FANA is the recommended first candidate for future stable converter refactoring because its strategy is clear, chain-aware, and chemically interpretable.
+Prototype `003A` has now been promoted to the first stable-candidate converter,
+with a reusable Python API, CLI, standardized reports, JSON validation metrics,
+and regression tests at 8, 34, and 111 nt.
 
 ---
 
@@ -420,7 +423,9 @@ Full rRNA-level conversion should be treated as a computational scalability stre
 
 ## Stable Converter Plan
 
-The `converters/` folder is reserved for stable or semi-stable converter modules. At the current stage, most scripts should remain in `prototypes/`.
+The `converters/` folder contains stable or semi-stable converter modules. Most
+experimental scripts remain in `prototypes/`, while RNA → FANA is the first
+promoted stable candidate.
 
 A prototype should only be promoted to `converters/` after it has:
 
@@ -441,6 +446,33 @@ v0.2 stable candidates: RNA → ANA, RNA → HNA
 v0.3 stable candidates: RNA → XyNA, RNA → CeNA
 v0.4 experimental-stable candidates: RNA → TNA, RNA → GNA
 PNA: separate special module for template-primary and sequence-primary generation
+```
+
+The v0.1 RNA → FANA candidate is available as:
+
+```python
+from digital_polymerase.converters import convert_rna_to_fana
+
+result = convert_rna_to_fana(
+    "input_rna.pdb",
+    "fana_template.pdb",
+    "candidate_fana.pdb",
+    "conversion_report.md",
+    "validation.json",
+    strict=True,
+)
+```
+
+or from the command line:
+
+```bash
+digital-polymerase-fana \
+  --rna input_rna.pdb \
+  --template fana_template.pdb \
+  --output candidate_fana.pdb \
+  --report conversion_report.md \
+  --metrics validation.json \
+  --strict
 ```
 
 ---
@@ -536,18 +568,15 @@ A converted model should be interpreted as a **computationally generated candida
 Near-term development priorities:
 
 1. Keep all current prototypes archived under `prototypes/`
-2. Expand tests for `core/`
-3. Refactor shared parser, residue, alignment, validation, and report logic into core-driven workflows
-4. Refactor RNA → FANA as the first stable converter candidate
-5. Add benchmark regression tests for FANA
-6. Standardize prototype CLI behavior and report format
-7. Add topology/connectivity support, including possible `CONECT` output
-8. Add stronger stereochemistry, chirality, torsion, and clash validation
-9. Add expected-base-atom and carbonyl/base-oxygen audits
-10. Add residue naming dictionaries for target XNAs
-11. Explore compatibility with minimization and force-field parameter workflows
-12. Build a template registry for XNA structural donors
-13. Revisit morpholino NA / PMO when better structural templates are available
+2. Expand `core/` validation for stereochemistry, chirality, torsions, and clashes
+3. Add topology/connectivity support, including possible `CONECT` output
+4. Define residue-naming dictionaries and downstream parameterization mappings
+5. Validate FANA candidates through an energy-minimization workflow
+6. Promote RNA → ANA and RNA → HNA using the same regression discipline
+7. Standardize remaining prototype CLI behavior and report formats
+8. Build a template registry for XNA structural donors
+9. Explore compatibility with minimization and force-field parameter workflows
+10. Revisit morpholino NA / PMO when better structural templates are available
 
 ---
 
@@ -617,7 +646,10 @@ Most sugar/phosphate-like XNA outputs are visually coherent and pass current int
 
 PNA is treated separately because it is a pseudopeptide nucleic acid. Current PNA support is strongest for **template-primary scaffold-first sequence-carrier generation**, while reliable **RNA-fold-preserving PNA reconstruction** remains unsolved under the current prototype framework.
 
-The next major development stage is modularization, stronger chemical validation, topology/connectivity support, force-field/minimization compatibility, and careful separation between fold-preserving conversion and sequence-carrier generation.
+The first modularization milestone is now complete for RNA → FANA. The next
+major stage is stronger chemical validation, topology/connectivity support,
+force-field/minimization compatibility, and careful separation between
+fold-preserving conversion and sequence-carrier generation.
 
 ---
 
