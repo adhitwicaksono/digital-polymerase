@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "digital-polymerase-core"
-version = "0.1.1"
+version = "0.1.2"
 description = "Reusable core modules for Digital Polymerase nucleic-acid/XNA candidate reconstruction."
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.23"]
@@ -15,6 +15,7 @@ test = ["pytest>=8.0"]
 [project.scripts]
 digital-polymerase-fana = "digital_polymerase.converters.rna_to_fana:main"
 digital-polymerase-fana-readiness = "digital_polymerase.physical.fana:main"
+digital-polymerase-fana-parameters = "digital_polymerase.physical.fana_parameters:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
