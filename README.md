@@ -25,6 +25,9 @@ Digital Polymerase currently has:
 - a candidate-bound external FANA parameter gate that validates hashes,
   provenance, residue/terminal mappings, declared parameter coverage, and review
   evidence before preparing—never executing—Amber minimization inputs
+- a controlled FANA campaign initializer and post-run audit that preserve the
+  unresolved modXNA/force-field decisions, parse external Amber results, restore
+  the minimized solute, and rerun stereochemical/geometry checks
 - core smoke tests and FANA regression tests at 8, 34, and 111 nt
 
 The project is currently transitioning from:
@@ -36,7 +39,7 @@ one-off prototype scripts
 toward:
 
 ```text
-shared core engine → stable converters → regression suite → physical-readiness gates → external-parameter gates
+shared core engine → stable converters → regression suite → readiness gates → external-parameter gates → controlled campaigns
 ```
 
 ---
@@ -137,11 +140,22 @@ digital-polymerase-fana-parameters init \
   --output fana_parameters.json
 ```
 
+Or initialize the complete controlled 8-mer campaign:
+
+```bash
+digital-polymerase-fana-campaign init \
+  --rna benchmarks/ana_fragment_scaling/inputs/RNA-8mer.pdb \
+  --template benchmarks/fana_fragment_scaling/templates/2KP4_FANA_10mer.pdb \
+  --output-dir fana_8mer_campaign
+```
+
 See [`docs/fana_level4_readiness.md`](docs/fana_level4_readiness.md) for geometry
 status semantics and
 [`docs/fana_external_parameter_gate.md`](docs/fana_external_parameter_gate.md)
-for the external Amber/modXNA handoff. The repository does not include FANA
-force-field parameter files.
+for the external Amber/modXNA handoff, and
+[`docs/fana_controlled_minimization.md`](docs/fana_controlled_minimization.md)
+for campaign and post-run status semantics. The repository does not include
+FANA force-field parameter files and does not execute Amber.
 
 The current package is still early-stage. Most conversion scripts remain in:
 
@@ -190,7 +204,8 @@ digital-polymerase/
 │       │
 │       ├── physical/
 │       │   ├── fana.py
-│       │   └── fana_parameters.py
+│       │   ├── fana_parameters.py
+│       │   └── fana_campaign.py
 │       │
 │       └── prototypes/
 │           ├── rna_to_hna_template_based.py
@@ -209,6 +224,7 @@ digital-polymerase/
 │   ├── core_package.md
 │   ├── fana_level4_readiness.md
 │   ├── fana_external_parameter_gate.md
+│   ├── fana_controlled_minimization.md
 │   ├── prompt_protocol.md
 │   ├── prototype_001_rna_to_hna.md
 │   ├── prototype_001B_rna_to_hna_template_guided.md
@@ -237,7 +253,8 @@ digital-polymerase/
     ├── test_core_smoke.py
     ├── test_rna_to_fana.py
     ├── test_fana_physical_readiness.py
-    └── test_fana_parameter_gate.py
+    ├── test_fana_parameter_gate.py
+    └── test_fana_campaign.py
 ```
 
 ---
@@ -365,6 +382,13 @@ hashes, residue and terminal mappings, declared force-field coverage, charge
 metadata, and named review evidence. Only then can it prepare a non-executed
 Amber LEaP/two-stage minimization bundle with status
 `PREPARED_NOT_EXECUTED`.
+
+The v0.1.3 campaign layer creates a reproducible candidate-bound 8-mer package
+and audits an externally executed minimization. It deliberately leaves the
+`DPO`/`RPO`, parent-force-field, canonical-base variant, uracil-compatibility,
+and terminal-template decisions unresolved until reviewed. Its strongest
+automatic post-run status is `STRUCTURAL_PASS_EXPERT_REVIEW_REQUIRED`; no real
+Amber run or parameter validation is claimed by this release.
 
 ---
 
@@ -502,6 +526,7 @@ Recommended promotion order:
 v0.1 stable candidate: RNA → FANA
 v0.1.1 physical-readiness gate: FANA topology/stereochemistry/parameterization handoff
 v0.1.2 external-parameter gate: provenance validation and unexecuted Amber bundle preparation
+v0.1.3 controlled-campaign tooling: reproducible 8-mer handoff and external-run audit
 v0.2 stable candidates: RNA → ANA, RNA → HNA
 v0.3 stable candidates: RNA → XyNA, RNA → CeNA
 v0.4 experimental-stable candidates: RNA → TNA, RNA → GNA
@@ -633,15 +658,17 @@ A converted model should be interpreted as a **computationally generated candida
 Near-term development priorities:
 
 1. Keep all current prototypes archived under `prototypes/`
-2. Obtain and independently review real external FANA atom types, charges,
-   terminal forms, and bonded/nonbonded parameters against the v0.1.2 manifest
-3. Run and inspect the prepared FANA Amber bundle only after that parameter gate
-   passes; do not advance to dynamics on LEaP or minimization failures
-4. Promote RNA → ANA and RNA → HNA using the same regression discipline
-5. Extend the topology/stereochemistry readiness framework to promoted converters
-6. Standardize remaining prototype CLI behavior and report formats
-7. Build a template registry for XNA structural donors
-8. Revisit morpholino NA / PMO when better structural templates are available
+2. Resolve the v0.1.3 campaign's parent-force-field, fragment-family, uracil,
+   and terminal-template decisions with an expert
+3. Obtain and independently review real external FANA atom types, charges,
+   terminal forms, and bonded/nonbonded parameters against the manifest
+4. Run and inspect the prepared 8-mer FANA Amber bundle only after the parameter
+   gate passes; do not advance to dynamics on LEaP or minimization failures
+5. Promote RNA → ANA and RNA → HNA using the same regression discipline
+6. Extend the topology/stereochemistry readiness framework to promoted converters
+7. Standardize remaining prototype CLI behavior and report formats
+8. Build a template registry for XNA structural donors
+9. Revisit morpholino NA / PMO when better structural templates are available
 
 ---
 
@@ -712,10 +739,11 @@ Most sugar/phosphate-like XNA outputs are visually coherent and pass current int
 PNA is treated separately because it is a pseudopeptide nucleic acid. Current PNA support is strongest for **template-primary scaffold-first sequence-carrier generation**, while reliable **RNA-fold-preserving PNA reconstruction** remains unsolved under the current prototype framework.
 
 The first modularization milestone is complete for RNA → FANA. Its Level 4
-readiness and external-parameter gates now make topology, stereochemistry,
-sugar-pucker, terminal chemistry, parameter provenance, and review requirements
-explicit. The next physical step is to supply a real independently reviewed
-FANA parameter set, satisfy the gate, and inspect a controlled minimization.
+readiness, external-parameter, and controlled-campaign tooling now make topology,
+stereochemistry, sugar-pucker, terminal chemistry, parameter provenance, and
+post-minimization review requirements explicit. The next physical step is to
+resolve the recorded force-field-family choices, supply a real independently
+reviewed FANA parameter set, satisfy the gate, and execute the 8-mer campaign.
 ANA and HNA remain the next converter families in the promotion sequence after
 the FANA physical-modeling boundary is exercised with real parameters.
 
