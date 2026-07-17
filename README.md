@@ -22,6 +22,9 @@ Digital Polymerase currently has:
 - a first stable-candidate RNA → FANA converter with Python API and CLI
 - a FANA Level 4 readiness gate for explicit connectivity, C2′ stereochemistry,
   template-relative sugar pucker, termini, and parameterization handoff
+- a candidate-bound external FANA parameter gate that validates hashes,
+  provenance, residue/terminal mappings, declared parameter coverage, and review
+  evidence before preparing—never executing—Amber minimization inputs
 - core smoke tests and FANA regression tests at 8, 34, and 111 nt
 
 The project is currently transitioning from:
@@ -33,7 +36,7 @@ one-off prototype scripts
 toward:
 
 ```text
-shared core engine → stable converters → regression suite → physical-readiness gates
+shared core engine → stable converters → regression suite → physical-readiness gates → external-parameter gates
 ```
 
 ---
@@ -67,9 +70,10 @@ A conversion may occur at different levels:
    Evaluating and refining the candidate structure through molecular mechanics, energy minimization, molecular dynamics, force-field/topology preparation, and other validation workflows.
 
 The main converter focus remains **Level 3: geometric candidate
-reconstruction**. FANA now also has a first **Level 4 readiness gate**, which
-audits topology and parameterization requirements without claiming that the
-candidate is physically refined or MD-ready.
+reconstruction**. FANA now also has **Level 4 readiness and external-parameter
+gates**, which audit topology and require external parameter provenance before
+preparing Amber inputs. They do not claim that the candidate is physically
+refined or MD-ready.
 
 A key lesson from the early prototypes is:
 
@@ -124,8 +128,20 @@ digital-polymerase-fana-readiness \
   --strict
 ```
 
-See [`docs/fana_level4_readiness.md`](docs/fana_level4_readiness.md) for status
-semantics and the external Amber/modXNA parameterization boundary.
+Then initialize the candidate-bound external-parameter template:
+
+```bash
+digital-polymerase-fana-parameters init \
+  --candidate candidate_fana.pdb \
+  --readiness fana_readiness.json \
+  --output fana_parameters.json
+```
+
+See [`docs/fana_level4_readiness.md`](docs/fana_level4_readiness.md) for geometry
+status semantics and
+[`docs/fana_external_parameter_gate.md`](docs/fana_external_parameter_gate.md)
+for the external Amber/modXNA handoff. The repository does not include FANA
+force-field parameter files.
 
 The current package is still early-stage. Most conversion scripts remain in:
 
@@ -169,7 +185,12 @@ digital-polymerase/
 │       │   └── errors.py
 │       │
 │       ├── converters/
-│       │   └── README.md
+│       │   ├── README.md
+│       │   └── rna_to_fana.py
+│       │
+│       ├── physical/
+│       │   ├── fana.py
+│       │   └── fana_parameters.py
 │       │
 │       └── prototypes/
 │           ├── rna_to_hna_template_based.py
@@ -186,6 +207,8 @@ digital-polymerase/
 │
 ├── docs/
 │   ├── core_package.md
+│   ├── fana_level4_readiness.md
+│   ├── fana_external_parameter_gate.md
 │   ├── prompt_protocol.md
 │   ├── prototype_001_rna_to_hna.md
 │   ├── prototype_001B_rna_to_hna_template_guided.md
@@ -212,7 +235,9 @@ digital-polymerase/
 │
 └── tests/
     ├── test_core_smoke.py
-    └── test_rna_to_fana.py
+    ├── test_rna_to_fana.py
+    ├── test_fana_physical_readiness.py
+    └── test_fana_parameter_gate.py
 ```
 
 ---
@@ -333,6 +358,13 @@ explicit covalent graph, audits covalent distances and C2′ stereochemistry,
 compares sugar pucker against the experimental FANA template, writes optional
 `CONECT` records, and emits a parameterization handoff manifest. A passing gate
 reports `PARAMETERIZATION_REQUIRED`, not `MD_READY`.
+
+The v0.1.2 external-parameter gate consumes that handoff plus independently
+supplied parameter artifacts. It verifies candidate/readiness hashes, artifact
+hashes, residue and terminal mappings, declared force-field coverage, charge
+metadata, and named review evidence. Only then can it prepare a non-executed
+Amber LEaP/two-stage minimization bundle with status
+`PREPARED_NOT_EXECUTED`.
 
 ---
 
@@ -469,6 +501,7 @@ Recommended promotion order:
 ```text
 v0.1 stable candidate: RNA → FANA
 v0.1.1 physical-readiness gate: FANA topology/stereochemistry/parameterization handoff
+v0.1.2 external-parameter gate: provenance validation and unexecuted Amber bundle preparation
 v0.2 stable candidates: RNA → ANA, RNA → HNA
 v0.3 stable candidates: RNA → XyNA, RNA → CeNA
 v0.4 experimental-stable candidates: RNA → TNA, RNA → GNA
@@ -600,9 +633,10 @@ A converted model should be interpreted as a **computationally generated candida
 Near-term development priorities:
 
 1. Keep all current prototypes archived under `prototypes/`
-2. Validate externally generated FANA atom types, charges, terminal forms, and
-   bonded/nonbonded parameters through a versioned parameter manifest
-3. Run controlled FANA minimization only after that parameter gate passes
+2. Obtain and independently review real external FANA atom types, charges,
+   terminal forms, and bonded/nonbonded parameters against the v0.1.2 manifest
+3. Run and inspect the prepared FANA Amber bundle only after that parameter gate
+   passes; do not advance to dynamics on LEaP or minimization failures
 4. Promote RNA → ANA and RNA → HNA using the same regression discipline
 5. Extend the topology/stereochemistry readiness framework to promoted converters
 6. Standardize remaining prototype CLI behavior and report formats
@@ -677,12 +711,13 @@ Most sugar/phosphate-like XNA outputs are visually coherent and pass current int
 
 PNA is treated separately because it is a pseudopeptide nucleic acid. Current PNA support is strongest for **template-primary scaffold-first sequence-carrier generation**, while reliable **RNA-fold-preserving PNA reconstruction** remains unsolved under the current prototype framework.
 
-The first modularization milestone is complete for RNA → FANA. Its first Level
-4 readiness gate now makes topology, stereochemistry, sugar-pucker, terminal,
-and parameterization requirements explicit. The next physical step is to
-validate an externally derived, versioned FANA parameter set before attempting
-controlled energy minimization. ANA and HNA remain the next converter families
-in the promotion sequence after the FANA physical-modeling boundary is defined.
+The first modularization milestone is complete for RNA → FANA. Its Level 4
+readiness and external-parameter gates now make topology, stereochemistry,
+sugar-pucker, terminal chemistry, parameter provenance, and review requirements
+explicit. The next physical step is to supply a real independently reviewed
+FANA parameter set, satisfy the gate, and inspect a controlled minimization.
+ANA and HNA remain the next converter families in the promotion sequence after
+the FANA physical-modeling boundary is exercised with real parameters.
 
 ---
 
