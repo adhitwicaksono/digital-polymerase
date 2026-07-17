@@ -28,6 +28,8 @@ Digital Polymerase currently has:
 - a controlled FANA campaign initializer and post-run audit that preserve the
   unresolved modXNA/force-field decisions, parse external Amber results, restore
   the minimized solute, and rerun stereochemical/geometry checks
+- a validated FANA terminal-normalization contract that prepares and audits
+  neutral 5′-OH candidates without unaudited manual PDB edits
 - core smoke tests and FANA regression tests at 8, 34, and 111 nt
 
 The project is currently transitioning from:
@@ -390,6 +392,11 @@ and terminal-template decisions unresolved until reviewed. Its strongest
 automatic post-run status is `STRUCTURAL_PASS_EXPERT_REVIEW_REQUIRED`; no real
 Amber run or parameter validation is claimed by this release.
 
+The v0.1.4 terminal handoff allows a reviewed neutral 5′-OH library to remove
+the source terminal `P`/`OP1`/`OP2` atoms during bundle preparation. Only this
+bounded removal is accepted, and the post-run audit applies the identical atom
+inventory before RMSD and geometry checks.
+
 ---
 
 ### CeNA and XyNA
@@ -527,6 +534,7 @@ v0.1 stable candidate: RNA → FANA
 v0.1.1 physical-readiness gate: FANA topology/stereochemistry/parameterization handoff
 v0.1.2 external-parameter gate: provenance validation and unexecuted Amber bundle preparation
 v0.1.3 controlled-campaign tooling: reproducible 8-mer handoff and external-run audit
+v0.1.4 terminal normalization: reviewed 5′-OH atom handling across preparation and audit
 v0.2 stable candidates: RNA → ANA, RNA → HNA
 v0.3 stable candidates: RNA → XyNA, RNA → CeNA
 v0.4 experimental-stable candidates: RNA → TNA, RNA → GNA
@@ -658,8 +666,8 @@ A converted model should be interpreted as a **computationally generated candida
 Near-term development priorities:
 
 1. Keep all current prototypes archived under `prototypes/`
-2. Resolve the v0.1.3 campaign's parent-force-field, fragment-family, uracil,
-   and terminal-template decisions with an expert
+2. Record the resolved OL3/modXNA fragment family, neutral terminal libraries,
+   and bounded 5′ atom normalization in the v0.1.4 campaign manifest
 3. Obtain and independently review real external FANA atom types, charges,
    terminal forms, and bonded/nonbonded parameters against the manifest
 4. Run and inspect the prepared 8-mer FANA Amber bundle only after the parameter
@@ -803,10 +811,14 @@ All generated code and structural outputs should be critically reviewed, tested,
 
 ---
 
-## Author
+## Author and Citation
 
 Developed by **Adhityo Wicaksono**   
 as part of an ongoing computational exploration of nucleic acid diversity, xenobiology, and the dry-lab side of the **XNA World Project**.
+
+For now, you can refer this tool as:
+
+Wicaksono A. 2026. Digital Polymerase: Dry-lab converter of XNA. https://github.com/adhitwicaksono/digital-polymerase
 
 ---
 
