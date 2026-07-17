@@ -65,7 +65,12 @@ def _approve_synthetic_manifest(campaign: Path) -> dict[str, str]:
     return code_by_base
 
 
-def _write_synthetic_minimized(campaign: Path, code_by_base: dict[str, str]) -> Path:
+def _write_synthetic_minimized(
+    campaign: Path,
+    code_by_base: dict[str, str],
+    *,
+    remove_five_prime_atoms: tuple[str, ...] = (),
+) -> Path:
     candidate_path = campaign / "candidate/candidate_fana.pdb"
     candidate = parse_pdb(candidate_path, strict=True)
     keys = sort_residue_keys(candidate)
@@ -85,6 +90,7 @@ def _write_synthetic_minimized(campaign: Path, code_by_base: dict[str, str]) -> 
                 coords=atom.coords + translation,
             )
             for atom_name, atom in candidate[key].items()
+            if index != 0 or atom_name not in remove_five_prime_atoms
         }
     water_key = ("Z", 1, "")
     minimized[water_key] = {
@@ -205,6 +211,55 @@ def test_post_minimization_audit_restores_solute_and_requires_expert_review(
     assert payload["expert_review_required"] is True
     assert payload["executed_by_digital_polymerase"] is False
     assert payload["stage2"]["energy"] == pytest.approx(-1100.0)
+
+
+def test_post_minimization_audit_honors_terminal_atom_normalization(
+    tmp_path: Path,
+):
+    campaign = _initialize(tmp_path)
+    code_by_base = _approve_synthetic_manifest(campaign)
+    manifest_path = campaign / "fana_parameters.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["parameterization"]["terminal_states"][0]["five_prime"]["remove_atoms"] = [
+        "P",
+        "OP1",
+        "OP2",
+    ]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    minimized = _write_synthetic_minimized(
+        campaign,
+        code_by_base,
+        remove_five_prime_atoms=("P", "OP1", "OP2"),
+    )
+    preflight = campaign / "parameter_preflight.json"
+    preflight.write_text(
+        '{"target":"FANA","status":"PREPARED_NOT_EXECUTED","executed":false}\n',
+        encoding="utf-8",
+    )
+    stage1 = campaign / "stage1.out"
+    stage2 = campaign / "stage2.out"
+    _write_amber_output(stage1)
+    _write_amber_output(stage2)
+
+    result = audit_fana_minimization(
+        campaign / "candidate/candidate_fana.pdb",
+        minimized,
+        campaign / "inputs/2KP4_FANA_template.pdb",
+        manifest_path,
+        preflight,
+        stage1,
+        stage2,
+        campaign / "terminal_audit",
+        strict=True,
+    )
+
+    assert result.structurally_passed
+    assert result.geometry_status == "PASS"
+    restored = parse_pdb(
+        campaign / "terminal_audit/restored_minimized_solute.pdb", strict=True
+    )
+    first_key = sort_residue_keys(restored)[0]
+    assert not {"P", "OP1", "OP2"}.intersection(restored[first_key])
 
 
 def test_post_minimization_audit_blocks_bad_amber_output(tmp_path: Path):

@@ -101,6 +101,36 @@ def test_fana_level4_writes_explicit_connectivity_pdb(tmp_path: Path):
     )
 
 
+def test_fana_level4_accepts_a_complete_neutral_five_prime_hydroxyl(
+    tmp_path: Path,
+):
+    candidate = _build_candidate(tmp_path, "RNA-8mer.pdb")
+    structure = parse_pdb(candidate, strict=True)
+    first_key = sort_residue_keys(structure)[0]
+    for atom_name in ("P", "OP1", "OP2"):
+        del structure[first_key][atom_name]
+    normalized = tmp_path / "fana_5oh.pdb"
+    write_pdb(structure, normalized)
+
+    result = audit_fana_physical_readiness(
+        normalized,
+        FANA_TEMPLATE,
+        tmp_path / "fana_5oh_readiness.md",
+        tmp_path / "fana_5oh_readiness.json",
+        strict=True,
+    )
+
+    assert result.geometry_ok
+    assert result.missing_atoms == []
+    assert result.distance_failures == []
+    assert result.bond_count == 191
+    payload = json.loads(
+        (tmp_path / "fana_5oh_readiness.json").read_text(encoding="utf-8")
+    )
+    segment = payload["topology_handoff"]["chain_segments"][0]
+    assert segment["five_prime_phosphorus_present"] is False
+
+
 def test_fana_level4_rejects_inverted_c2_fluorine_stereochemistry(
     tmp_path: Path,
 ):

@@ -242,6 +242,71 @@ def test_approved_manifest_prepares_but_does_not_execute_amber(
     assert preflight["executed"] is False
 
 
+def test_preparer_applies_declared_five_prime_atom_normalization(tmp_path: Path):
+    candidate, readiness = _build_gate_inputs(tmp_path)
+    manifest_path = _approved_fixture_manifest(tmp_path, candidate, readiness)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    five_prime = manifest["parameterization"]["terminal_states"][0]["five_prime"]
+    five_prime["chemistry"] = "neutral 5-prime hydroxyl"
+    five_prime["remove_atoms"] = ["P", "OP1", "OP2"]
+    manifest["parameterization"]["charge_model"]["expected_total_charge"] = -7
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    output_dir = tmp_path / "normalized_bundle"
+    result = prepare_fana_amber_minimization(
+        candidate,
+        readiness,
+        manifest_path,
+        output_dir,
+        strict=True,
+    )
+
+    assert result.ready
+    normalized = parse_pdb(output_dir / "candidate_amber_names.pdb", strict=True)
+    first_key = sort_residue_keys(normalized)[0]
+    assert not {"P", "OP1", "OP2"}.intersection(normalized[first_key])
+    assert {"O5'", "C5'"}.issubset(normalized[first_key])
+
+
+def test_preparer_rejects_unsupported_terminal_atom_removal(tmp_path: Path):
+    candidate, readiness = _build_gate_inputs(tmp_path)
+    manifest_path = _approved_fixture_manifest(tmp_path, candidate, readiness)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["parameterization"]["terminal_states"][0]["five_prime"]["remove_atoms"] = [
+        "C1'"
+    ]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValidationError, match="cannot remove: C1'"):
+        prepare_fana_amber_minimization(
+            candidate,
+            readiness,
+            manifest_path,
+            tmp_path / "unsupported_removal",
+            strict=True,
+        )
+
+
+def test_preparer_rejects_partial_five_prime_phosphate_removal(tmp_path: Path):
+    candidate, readiness = _build_gate_inputs(tmp_path)
+    manifest_path = _approved_fixture_manifest(tmp_path, candidate, readiness)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["parameterization"]["terminal_states"][0]["five_prime"]["remove_atoms"] = [
+        "P",
+        "OP1",
+    ]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValidationError, match="must remove P, OP1, and OP2 together"):
+        prepare_fana_amber_minimization(
+            candidate,
+            readiness,
+            manifest_path,
+            tmp_path / "partial_removal",
+            strict=True,
+        )
+
+
 def test_tampered_parameter_artifact_blocks_strict_preparation(tmp_path: Path):
     candidate, readiness = _build_gate_inputs(tmp_path)
     manifest_path = _approved_fixture_manifest(tmp_path, candidate, readiness)
