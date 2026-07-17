@@ -71,6 +71,14 @@ class AmberFinalResult:
     reached_maximum_cycles: bool
 
 
+@dataclass(frozen=True)
+class AmberResidueLayout:
+    """Expected Amber residue name and source atoms omitted at a terminus."""
+
+    residue_name: str
+    remove_atoms: tuple[str, ...] = ()
+
+
 @dataclass
 class FANACampaignResult:
     """Files produced for a candidate-bound FANA minimization campaign."""
@@ -330,8 +338,9 @@ The modXNA input form is one line per residue chemistry:
 <backbone fragment> A5L <base fragment>
 ```
 
-modXNA requires current AmberTools/CPPTRAJ, generates a random three-character
-residue name, and does not build 5-prime or 3-prime terminal residues.
+modXNA requires current AmberTools/CPPTRAJ and can generate explicitly named
+5-prime/3-prime cap libraries. Record those names and any approved source-atom
+normalization in the parameter manifest; never hand-edit the prepared PDB.
 
 ## 2. Add reviewed artifacts
 
@@ -479,18 +488,20 @@ def parse_amber_minimization_output(path: str | Path) -> AmberFinalResult:
     )
 
 
-def _expected_amber_names(
+def _expected_amber_layout(
     candidate: Structure,
     parameterization: Mapping[str, Any],
     issues: list[str],
-) -> list[str]:
+) -> list[AmberResidueLayout]:
     mappings = parameterization.get("residue_mappings")
     states = parameterization.get("terminal_states")
     if not isinstance(mappings, dict) or not isinstance(states, list):
         issues.append("Parameter manifest lacks residue mappings or terminal states.")
         return []
 
-    terminal_by_segment: dict[tuple[str, str], tuple[str, str]] = {}
+    terminal_by_segment: dict[
+        tuple[str, str], tuple[AmberResidueLayout, AmberResidueLayout]
+    ] = {}
     for state in states:
         if not isinstance(state, dict):
             continue
@@ -501,9 +512,26 @@ def _expected_amber_names(
             five_name = five.get("residue_name")
             three_name = three.get("residue_name")
             if isinstance(five_name, str) and isinstance(three_name, str):
-                terminal_by_segment[pair] = (five_name, three_name)
+                terminal_layouts: list[AmberResidueLayout] = []
+                for end_name, value in ((five_name, five), (three_name, three)):
+                    remove_atoms = value.get("remove_atoms", [])
+                    if not isinstance(remove_atoms, list) or not all(
+                        isinstance(atom_name, str) for atom_name in remove_atoms
+                    ):
+                        issues.append(
+                            f"Terminal mapping {pair[0]}–{pair[1]} has invalid "
+                            "remove_atoms."
+                        )
+                        remove_atoms = []
+                    terminal_layouts.append(
+                        AmberResidueLayout(end_name, tuple(remove_atoms))
+                    )
+                terminal_by_segment[pair] = (
+                    terminal_layouts[0],
+                    terminal_layouts[1],
+                )
 
-    expected_by_key: dict[ResidueKey, str] = {}
+    expected_by_key: dict[ResidueKey, AmberResidueLayout] = {}
     for segment in _consecutive_segments(sort_residue_keys(candidate)):
         pair = (_residue_label(segment[0]), _residue_label(segment[-1]))
         terminal = terminal_by_segment.get(pair)
@@ -520,10 +548,10 @@ def _expected_amber_names(
         expected_by_key[segment[0]] = terminal[0]
         expected_by_key[segment[-1]] = terminal[1]
 
-    names: list[str] = []
+    layouts: list[AmberResidueLayout] = []
     for key in sort_residue_keys(candidate):
         if key in expected_by_key:
-            names.append(expected_by_key[key])
+            layouts.append(expected_by_key[key])
             continue
         source_name = residue_name(candidate[key])
         mapping = mappings.get(source_name)
@@ -532,10 +560,37 @@ def _expected_amber_names(
         )
         if not isinstance(internal_name, str):
             issues.append(f"No internal Amber residue mapping for {source_name}.")
-            names.append("")
+            layouts.append(AmberResidueLayout(""))
         else:
-            names.append(internal_name)
-    return names
+            layouts.append(AmberResidueLayout(internal_name))
+    return layouts
+
+
+def _normalize_candidate_for_amber(
+    *,
+    candidate: Structure,
+    layouts: Sequence[AmberResidueLayout],
+    issues: list[str],
+) -> Structure:
+    keys = sort_residue_keys(candidate)
+    if len(keys) != len(layouts):
+        issues.append("Amber residue layout does not cover every candidate residue.")
+        return {}
+    normalized: Structure = {}
+    for key, layout in zip(keys, layouts):
+        absent = sorted(set(layout.remove_atoms) - set(candidate[key]))
+        if absent:
+            issues.append(
+                f"Terminal normalization for {_residue_label(key)} references "
+                "absent atoms: " + ", ".join(absent)
+            )
+        removed = set(layout.remove_atoms)
+        normalized[key] = {
+            atom_name: clone_atom(atom)
+            for atom_name, atom in candidate[key].items()
+            if atom_name not in removed
+        }
+    return normalized
 
 
 def _restore_minimized_polymer(
@@ -828,9 +883,15 @@ def audit_fana_minimization(
     if preflight.get("executed") is not False:
         issues.append("Parameter preflight must record executed as false.")
 
-    expected_names = _expected_amber_names(candidate, parameterization, issues)
-    restored = _restore_minimized_polymer(
+    layouts = _expected_amber_layout(candidate, parameterization, issues)
+    expected_names = [layout.residue_name for layout in layouts]
+    normalized_candidate = _normalize_candidate_for_amber(
         candidate=candidate,
+        layouts=layouts,
+        issues=issues,
+    )
+    restored = _restore_minimized_polymer(
+        candidate=normalized_candidate,
         minimized=minimized,
         expected_amber_names=expected_names,
         issues=issues,
@@ -870,7 +931,7 @@ def audit_fana_minimization(
         )
         try:
             heavy_atom_count, heavy_atom_rmsd, maximum_displacement = (
-                _heavy_atom_displacements(candidate, restored)
+                _heavy_atom_displacements(normalized_candidate, restored)
             )
         except (KeyError, ValidationError) as exc:
             issues.append(f"Heavy-atom comparison failed: {exc}")
